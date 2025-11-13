@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<modDesc descVersion="100">
+    <author>Ritter</author>
+    <version>0.7.0.0</version>
+
+    <title>
+        <en>Adjust Animal Food</en>
+    </title>
+
+    <description>
+        <en><![CDATA[Why shouldn't chickens eat oats if you want them to? Or grass have 100% effectiveness for cows? 
+This mod gives you control over food effectiveness, crop assignments, mixed feed recipes, and TMR compositions.
+
+Notice: 
+- This mod is in beta. Please back up your savegames before use.
+- Customizations are done by editing an XML file generated in your savegame folder. No in-game UI is provided.
+
+Customize aspects of animal feeding without modifying map files:
+- Food effectiveness (productionWeight, eatWeight)
+- Which crops belong to each food group (fillTypes)
+- Mixed feed recipes and ingredient proportions
+- TMR/forage recipe compositions and ranges
+
+Usage:
+- Configuration file (aaf_AnimalFood.xml) is automatically created in your savegame folder on first load.
+- Exit the game and locate the XML file in your savegame directory.
+- Edit the XML to customize your animal feeding system.
+- Changes take effect on every savegame load as long as the mod is active and the XML file is present.
+
+Documentation, source code and issue tracker at https://github.com/rittermod/FS25_AdjustAnimalFood
+
+Changelog:
+0.7.0.0:
+- Initial beta release
+- Complete animals/mixtures/recipes support
+- XML merging with game defaults and updates
+        ]]>        </en>
+    </description>
+
+    <iconFilename>icon_adjustAnimalFood.dds</iconFilename>
+    <multiplayer supported="false"/>
+
+    <extraSourceFiles>
+        <sourceFile filename="scripts/RmAdjustAnimalFood.lua"/>
+    </extraSourceFiles>
+</modDesc>

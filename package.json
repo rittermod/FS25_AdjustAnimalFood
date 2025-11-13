@@ -1,0 +1,18 @@
+{
+  "name": "fs25-adjust-animal-food",
+  "version": "1.0.0.0",
+  "description": "Build system for FS25 Adjust Animal Food mod",
+  "scripts": {
+    "validate": "cd ../fs25_mod_build_helper && poetry run modbuild validate ../FS25_AdjustAnimalFood",
+    "package": "cd ../fs25_mod_build_helper && poetry run modbuild package ../FS25_AdjustAnimalFood",
+    "deploy": "cd ../fs25_mod_build_helper && poetry run modbuild deploy ../FS25_AdjustAnimalFood",
+    "sync": "cd ../fs25_mod_build_helper && poetry run modbuild sync ../FS25_AdjustAnimalFood",
+    "clean": "cd ../fs25_mod_build_helper && poetry run modbuild clean ../FS25_AdjustAnimalFood",
+    "release": "cd ../fs25_mod_build_helper && poetry run modbuild build ../FS25_AdjustAnimalFood"
+  },
+  "author": "Ritter",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rittermod/FS25_AdjustAnimalFood"
+  }
+}
