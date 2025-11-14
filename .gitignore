@@ -3,4 +3,5 @@
 CLAUDE.md
 .vscode/
 build/
+dist/
 _temp_files/
