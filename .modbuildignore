@@ -8,6 +8,7 @@
 # Documentation and README files
 *.md
 screenshots/
+claudedocs/
 
 # Node.js files (if any)
 package.json

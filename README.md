@@ -2,7 +2,7 @@
 
 Adjust Animal Food allows you to customize the animal feeding system in Farming Simulator 2025 through an XML configuration file. Why shouldn't chickens eat oats if you want them to? Or make grass more effective for cows? This mod gives you control over food effectiveness, crop assignments, mixed feed recipes, and TMR compositions.
 
-**Singleplayer only.**
+Supports multiplayer.
 
 ## Notes
 
