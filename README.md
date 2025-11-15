@@ -10,6 +10,8 @@ Supports multiplayer.
 
 **Beta Software:** Please back up your savegames before use. The mod is fully functional but still in beta testing.
 
+**At the moment, you cannot add/remove food groups, change name of food groups etc. Only change the weights and what fillTypes are in the groups.**
+
 Documentation, source code and issue tracker at https://github.com/rittermod/FS25_AdjustAnimalFood
 
 ## Features
