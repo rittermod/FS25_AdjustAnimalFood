@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <modDesc descVersion="100">
     <author>Ritter</author>
-    <version>0.7.0.0</version>
+    <version>0.8.0.0</version>
 
     <title>
         <en>Adjust Animal Food</en>
@@ -30,6 +30,12 @@ Usage:
 Documentation, source code and issue tracker at https://github.com/rittermod/FS25_AdjustAnimalFood
 
 Changelog:
+
+0.8.0.0:
+- Added multiplayer support
+- Improved code stability and performance
+- Bug fixes and optimizations
+
 0.7.0.0:
 - Initial beta release
 - Complete animals/mixtures/recipes support
@@ -38,9 +44,9 @@ Changelog:
     </description>
 
     <iconFilename>icon_adjustAnimalFood.dds</iconFilename>
-    <multiplayer supported="false"/>
+    <multiplayer supported="true"/>
 
     <extraSourceFiles>
-        <sourceFile filename="scripts/RmAdjustAnimalFood.lua"/>
+        <sourceFile filename="scripts/main.lua"/>
     </extraSourceFiles>
 </modDesc>
