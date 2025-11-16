@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <modDesc descVersion="100">
     <author>Ritter</author>
-    <version>0.8.0.0</version>
+    <version>0.9.0.0</version>
 
     <title>
         <en>Adjust Animal Food</en>
@@ -30,7 +30,12 @@ Usage:
 Documentation, source code and issue tracker at https://github.com/rittermod/FS25_AdjustAnimalFood
 
 Changelog:
-
+  0.9.0.0:
+  - Added disabling feature for food groups and ingredients
+  - Generated XML files now include inline documentation and examples
+  - Disabled items are preserved in XML across save cycles
+  - Automatic weight/ratio normalization when items are disabled
+  
 0.8.0.0:
 - Added multiplayer support
 - Improved code stability and performance

@@ -39,9 +39,11 @@ local function applyAnimalsToGame(animals, foodSystem)
 
                 -- Apply values from configuration
                 for _, configGroup in ipairs(animalData.foodGroups) do
-                    local gameGroup = groupsByTitle[configGroup.title]
+                    -- Skip disabled items - they will be removed later
+                    if not configGroup.disabled then
+                        local gameGroup = groupsByTitle[configGroup.title]
 
-                    if gameGroup then
+                        if gameGroup then
                         -- Apply production and eat weights
                         gameGroup.productionWeight = configGroup.productionWeight
                         gameGroup.eatWeight = configGroup.eatWeight
@@ -58,10 +60,26 @@ local function applyAnimalsToGame(animals, foodSystem)
                             end
                         end
 
-                        applied = applied + 1
-                        RmLogging.logDebug("Applied %s / %s: prodWeight=%.3f, eatWeight=%.3f",
-                            animalData.animalType, configGroup.title,
-                            configGroup.productionWeight, configGroup.eatWeight)
+                            applied = applied + 1
+                            RmLogging.logDebug("Applied %s / %s: prodWeight=%.3f, eatWeight=%.3f",
+                                animalData.animalType, configGroup.title,
+                                configGroup.productionWeight, configGroup.eatWeight)
+                        end
+                    end
+                end
+
+                -- Remove disabled food groups from game
+                for _, configGroup in ipairs(animalData.foodGroups) do
+                    if configGroup.disabled then
+                        -- Find and remove from game's groups array
+                        for i = #animalFood.groups, 1, -1 do
+                            if animalFood.groups[i].title == configGroup.title then
+                                table.remove(animalFood.groups, i)
+                                RmLogging.logInfo("Removed disabled food group: %s / %s",
+                                    animalData.animalType, configGroup.title)
+                                break
+                            end
+                        end
                     end
                 end
             end
@@ -85,9 +103,10 @@ local function applyMixturesToGame(mixtures, foodSystem)
             local gameMixture = foodSystem:getMixtureByFillType(fillTypeIndex)
 
             if gameMixture then
-                -- Apply ingredient weights and fillTypes
+                -- Apply ingredient weights and fillTypes for non-disabled ingredients
                 for i, configIngredient in ipairs(mixtureData.ingredients) do
-                    if gameMixture.ingredients[i] then
+                    -- Skip disabled ingredients - they will be removed later
+                    if not configIngredient.disabled and gameMixture.ingredients[i] then
                         local gameIngredient = gameMixture.ingredients[i]
 
                         -- Apply weight
@@ -105,6 +124,15 @@ local function applyMixturesToGame(mixtures, foodSystem)
                         end
 
                         mixturesApplied = mixturesApplied + 1
+                    end
+                end
+
+                -- Remove disabled ingredients from game (reverse iteration to handle index shifts)
+                for i = #mixtureData.ingredients, 1, -1 do
+                    if mixtureData.ingredients[i].disabled and gameMixture.ingredients[i] then
+                        table.remove(gameMixture.ingredients, i)
+                        RmLogging.logInfo("Removed disabled ingredient %d from mixture %s",
+                            i, mixtureData.fillType)
                     end
                 end
 
@@ -134,9 +162,10 @@ local function applyRecipesToGame(recipes, foodSystem)
             local gameRecipe = foodSystem:getRecipeByFillTypeIndex(fillTypeIndex)
 
             if gameRecipe then
-                -- Apply ingredient percentages and fillTypes
+                -- Apply ingredient percentages and fillTypes for non-disabled ingredients
                 for i, configIngredient in ipairs(recipeData.ingredients) do
-                    if gameRecipe.ingredients[i] then
+                    -- Skip disabled ingredients - they will be removed later
+                    if not configIngredient.disabled and gameRecipe.ingredients[i] then
                         local gameIngredient = gameRecipe.ingredients[i]
 
                         -- Apply percentages (convert from 0-100 to 0-1)
@@ -158,6 +187,15 @@ local function applyRecipesToGame(recipes, foodSystem)
                         end
 
                         recipesApplied = recipesApplied + 1
+                    end
+                end
+
+                -- Remove disabled ingredients from game (reverse iteration to handle index shifts)
+                for i = #recipeData.ingredients, 1, -1 do
+                    if recipeData.ingredients[i].disabled and gameRecipe.ingredients[i] then
+                        table.remove(gameRecipe.ingredients, i)
+                        RmLogging.logInfo("Removed disabled ingredient %d from recipe %s",
+                            i, recipeData.fillType)
                     end
                 end
 

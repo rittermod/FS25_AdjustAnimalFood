@@ -5,7 +5,7 @@
     Main orchestrator module - coordinates initialization, lifecycle hooks, and network sync.
 
     Author: Ritter
-    Version: 0.8.0.0
+    Version: 0.9.0.0
 
     OVERVIEW:
     This mod provides control over the animal food system using the game's
@@ -125,7 +125,8 @@ function RmAdjustAnimalFood.loadAndApply()
         local xmlData = RmAafXmlOperations:loadFromXML(xmlFilePath)
         if xmlData then
             local gameData = RmAafGameDataReader:readGameData()
-            local merged = RmAafDataMerger:mergeData(xmlData, gameData)
+            -- Preserve all XML-only items at startup (for custom additions in Part 2)
+            local merged = RmAafDataMerger:mergeData(xmlData, gameData, true)
 
             -- Store config for network sync
             RmAdjustAnimalFood.configData = merged
@@ -178,7 +179,19 @@ function RmAdjustAnimalFood.saveToFile()
 
     local xmlFilePath = savegameDir .. "/" .. RmAdjustAnimalFood.XML_FILENAME
     local gameData = RmAafGameDataReader:readGameData()
-    RmAafXmlOperations:saveToXML(gameData, xmlFilePath)
+
+    local dataToSave
+    if RmAdjustAnimalFood.configData then
+        -- Normal case: merge with stored config, preserving only disabled items (not game-removed)
+        dataToSave = RmAafDataMerger:mergeData(RmAdjustAnimalFood.configData, gameData, false)
+    else
+        -- First save before configData was initialized (new game, savegame folder didn't exist during loadAndApply)
+        RmLogging.logInfo("No config data available, saving current game data")
+        dataToSave = gameData
+        RmAdjustAnimalFood.configData = gameData
+    end
+
+    RmAafXmlOperations:saveToXML(dataToSave, xmlFilePath)
 end
 
 ---Called when map finishes loading
