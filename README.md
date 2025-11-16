@@ -10,7 +10,17 @@ Supports multiplayer.
 
 **Beta Software:** Please back up your savegames before use. The mod is fully functional but still in beta testing.
 
-**You can disable food groups, mixture ingredients, and recipe ingredients. You can change weights and fillTypes. You cannot add new animal types or change food group names.**
+As of now (Version 0.9.0.0)
+
+You can:
+* change weights, fillTypes and percentages in the food groups and ingredients. 
+* disable food groups, mixture ingredients, and recipe ingredients. 
+
+You **cannot**:
+* add new food groups, mixtures, or recipes.
+* change animal types or consumption types.
+* change internal names or titles (these are used for matching only).
+
 
 Documentation, source code and issue tracker at https://github.com/rittermod/FS25_AdjustAnimalFood
 
