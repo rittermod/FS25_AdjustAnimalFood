@@ -44,7 +44,7 @@ RmAdjustAnimalFood.configData = nil -- Stores merged config for network sync
 
 -- Configure logging
 RmLogging.setLogPrefix("[RmAdjustAnimalFood]")
--- RmLogging.setLogLevel(RmLogging.LOG_LEVEL.DEBUG) -- Change to INFO or WARNING for less verbosity
+RmLogging.setLogLevel(RmLogging.LOG_LEVEL.DEBUG) -- Change to INFO or WARNING for less verbosity
 
 -- ============================================================================
 -- INITIALIZATION: Context detection and setup
@@ -125,7 +125,8 @@ function RmAdjustAnimalFood.loadAndApply()
         local xmlData = RmAafXmlOperations:loadFromXML(xmlFilePath)
         if xmlData then
             local gameData = RmAafGameDataReader:readGameData()
-            local merged = RmAafDataMerger:mergeData(xmlData, gameData)
+            -- Preserve all XML-only items at startup (for custom additions in Part 2)
+            local merged = RmAafDataMerger:mergeData(xmlData, gameData, true)
 
             -- Store config for network sync
             RmAdjustAnimalFood.configData = merged
@@ -178,7 +179,11 @@ function RmAdjustAnimalFood.saveToFile()
 
     local xmlFilePath = savegameDir .. "/" .. RmAdjustAnimalFood.XML_FILENAME
     local gameData = RmAafGameDataReader:readGameData()
-    RmAafXmlOperations:saveToXML(gameData, xmlFilePath)
+
+    -- Merge with stored config, preserving only disabled items (not game-removed)
+    local merged = RmAafDataMerger:mergeData(RmAdjustAnimalFood.configData, gameData, false)
+
+    RmAafXmlOperations:saveToXML(merged, xmlFilePath)
 end
 
 ---Called when map finishes loading

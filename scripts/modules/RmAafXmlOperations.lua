@@ -29,12 +29,45 @@ RmAafXmlOperations = {}
 function RmAafXmlOperations:loadFromXML(filePath)
     RmLogging.logInfo("Loading animal food configuration from %s", filePath)
 
-    if not AnimalFoodSystem.xmlSchema then
-        RmLogging.logError("AnimalFoodSystem.xmlSchema not available")
-        return nil
+    -- Create extended schema with our custom 'disabled' attribute
+    local schema = AnimalFoodSystem.xmlSchema
+    if schema then
+        -- Register disabled attribute for food groups
+        schema:register(XMLValueType.BOOL, "animalFood.animals.animal(?).foodGroup(?)#disabled", "Disable this food group")
+
+        -- Register disabled attribute for mixture and recipe ingredients
+        -- Note: Entire mixtures/recipes cannot be disabled, but individual ingredients can be
+        schema:register(XMLValueType.BOOL, "animalFood.mixtures.mixture(?).ingredient(?)#disabled", "Disable this ingredient")
+        schema:register(XMLValueType.BOOL, "animalFood.recipes.recipe(?).ingredient(?)#disabled", "Disable this ingredient")
+
+        -- Register documentation element (written but ignored on load)
+        schema:register(XMLValueType.STRING, "animalFood.documentation", "User documentation")
+
+        -- Register example elements for animals (written but ignored on load)
+        schema:register(XMLValueType.STRING, "animalFood.animals.animal(?).example#description", "Example description")
+        schema:register(XMLValueType.STRING, "animalFood.animals.animal(?).example.foodGroup#title", "Example food group title")
+        schema:register(XMLValueType.FLOAT, "animalFood.animals.animal(?).example.foodGroup#productionWeight", "Example production weight")
+        schema:register(XMLValueType.FLOAT, "animalFood.animals.animal(?).example.foodGroup#eatWeight", "Example eat weight")
+        schema:register(XMLValueType.STRING, "animalFood.animals.animal(?).example.foodGroup#fillTypes", "Example fill types")
+        schema:register(XMLValueType.BOOL, "animalFood.animals.animal(?).example.foodGroup#disabled", "Example disabled flag")
+
+        -- Register example elements for mixtures (written but ignored on load)
+        schema:register(XMLValueType.STRING, "animalFood.mixtures.mixture(?).example#description", "Example description")
+        schema:register(XMLValueType.FLOAT, "animalFood.mixtures.mixture(?).example.ingredient#weight", "Example weight")
+        schema:register(XMLValueType.STRING, "animalFood.mixtures.mixture(?).example.ingredient#fillTypes", "Example fill types")
+        schema:register(XMLValueType.BOOL, "animalFood.mixtures.mixture(?).example.ingredient#disabled", "Example disabled flag")
+
+        -- Register example elements for recipes (written but ignored on load)
+        schema:register(XMLValueType.STRING, "animalFood.recipes.recipe(?).example#description", "Example description")
+        schema:register(XMLValueType.STRING, "animalFood.recipes.recipe(?).example.ingredient#name", "Example name")
+        schema:register(XMLValueType.STRING, "animalFood.recipes.recipe(?).example.ingredient#title", "Example title")
+        schema:register(XMLValueType.INT, "animalFood.recipes.recipe(?).example.ingredient#minPercentage", "Example min percentage")
+        schema:register(XMLValueType.INT, "animalFood.recipes.recipe(?).example.ingredient#maxPercentage", "Example max percentage")
+        schema:register(XMLValueType.STRING, "animalFood.recipes.recipe(?).example.ingredient#fillTypes", "Example fill types")
+        schema:register(XMLValueType.BOOL, "animalFood.recipes.recipe(?).example.ingredient#disabled", "Example disabled flag")
     end
 
-    local xmlFile = XMLFile.load("animalFoodAdjust", filePath, AnimalFoodSystem.xmlSchema)
+    local xmlFile = XMLFile.load("animalFoodAdjust", filePath, schema)
     if not xmlFile then
         RmLogging.logError("Failed to load XML file with schema")
         return nil
@@ -67,6 +100,12 @@ function RmAafXmlOperations:loadFromXML(filePath)
                     fillTypes = xmlFile:getValue(groupKey .. "#fillTypes")
                 }
 
+                -- Read disabled attribute (only set if explicitly true)
+                local disabled = xmlFile:getValue(groupKey .. "#disabled")
+                if disabled == true then
+                    foodGroup.disabled = true
+                end
+
                 if foodGroup.title then
                     table.insert(animal.foodGroups, foodGroup)
                 end
@@ -90,6 +129,13 @@ function RmAafXmlOperations:loadFromXML(filePath)
                 weight = xmlFile:getValue(ingredientKey .. "#weight", 0),
                 fillTypes = xmlFile:getValue(ingredientKey .. "#fillTypes")
             }
+
+            -- Read disabled attribute (only set if explicitly true)
+            local disabled = xmlFile:getValue(ingredientKey .. "#disabled")
+            if disabled == true then
+                ingredient.disabled = true
+            end
+
             table.insert(mixture.ingredients, ingredient)
         end)
 
@@ -114,6 +160,13 @@ function RmAafXmlOperations:loadFromXML(filePath)
                 maxPercentage = xmlFile:getValue(ingredientKey .. "#maxPercentage", 75),
                 fillTypes = xmlFile:getValue(ingredientKey .. "#fillTypes")
             }
+
+            -- Read disabled attribute (only set if explicitly true)
+            local disabled = xmlFile:getValue(ingredientKey .. "#disabled")
+            if disabled == true then
+                ingredient.disabled = true
+            end
+
             table.insert(recipe.ingredients, ingredient)
         end)
 
@@ -148,11 +201,33 @@ function RmAafXmlOperations:saveToXML(data, filePath)
         return false
     end
 
+    -- Write documentation element (will be ignored during load)
+    local docText = [[DISABLING FEATURE:
+- Add disabled="true" to any food group, mixture ingredient, or recipe ingredient to disable it
+- Disabled items are removed from the game but preserved in this file
+- When you save, disabled items remain and won't be re-added
+- Remaining items automatically normalize their weights/percentages
+
+See examples below showing how to add disabled="true" to your own lines.
+Full documentation: https://github.com/rittermod/FS25_AdjustAnimalFood]]
+    setXMLString(xmlFile, "animalFood.documentation", docText)
+
     -- Save animals
     for animalIndex, animal in ipairs(data.animals) do
         local animalKey = string.format("animalFood.animals.animal(%d)", animalIndex - 1)
         setXMLString(xmlFile, animalKey .. "#animalType", animal.animalType)
         setXMLString(xmlFile, animalKey .. "#consumptionType", animal.consumptionType)
+
+        -- Add example for first animal showing how to disable a food group
+        if animalIndex == 1 then
+            local exampleKey = animalKey .. ".example"
+            setXMLString(xmlFile, exampleKey .. "#description", "EXAMPLE: To disable a food group, add disabled=\"true\" to any foodGroup line below")
+            setXMLString(xmlFile, exampleKey .. ".foodGroup#title", "ExampleFoodGroup")
+            setXMLFloat(xmlFile, exampleKey .. ".foodGroup#productionWeight", 1.0)
+            setXMLFloat(xmlFile, exampleKey .. ".foodGroup#eatWeight", 1.0)
+            setXMLString(xmlFile, exampleKey .. ".foodGroup#fillTypes", "EXAMPLE_FILLTYPE")
+            setXMLBool(xmlFile, exampleKey .. ".foodGroup#disabled", true)
+        end
 
         for groupIndex, foodGroup in ipairs(animal.foodGroups) do
             local groupKey = string.format("%s.foodGroup(%d)", animalKey, groupIndex - 1)
@@ -160,6 +235,11 @@ function RmAafXmlOperations:saveToXML(data, filePath)
             setXMLFloat(xmlFile, groupKey .. "#productionWeight", foodGroup.productionWeight)
             setXMLFloat(xmlFile, groupKey .. "#eatWeight", foodGroup.eatWeight)
             setXMLString(xmlFile, groupKey .. "#fillTypes", foodGroup.fillTypes)
+
+            -- Only write disabled="true" if item is disabled
+            if foodGroup.disabled then
+                setXMLBool(xmlFile, groupKey .. "#disabled", true)
+            end
         end
 
         RmLogging.logDebug("Saved animal %s with %d food groups", animal.animalType, #animal.foodGroups)
@@ -171,10 +251,24 @@ function RmAafXmlOperations:saveToXML(data, filePath)
         setXMLString(xmlFile, mixtureKey .. "#fillType", mixture.fillType)
         setXMLString(xmlFile, mixtureKey .. "#animalType", mixture.animalType)
 
+        -- Add example for first mixture showing how to disable an ingredient
+        if mixtureIndex == 1 then
+            local exampleKey = mixtureKey .. ".example"
+            setXMLString(xmlFile, exampleKey .. "#description", "EXAMPLE: To disable an ingredient, add disabled=\"true\" to any ingredient line below")
+            setXMLFloat(xmlFile, exampleKey .. ".ingredient#weight", 1.0)
+            setXMLString(xmlFile, exampleKey .. ".ingredient#fillTypes", "EXAMPLE_FILLTYPE")
+            setXMLBool(xmlFile, exampleKey .. ".ingredient#disabled", true)
+        end
+
         for ingredientIndex, ingredient in ipairs(mixture.ingredients) do
             local ingredientKey = string.format("%s.ingredient(%d)", mixtureKey, ingredientIndex - 1)
             setXMLFloat(xmlFile, ingredientKey .. "#weight", ingredient.weight)
             setXMLString(xmlFile, ingredientKey .. "#fillTypes", ingredient.fillTypes)
+
+            -- Only write disabled="true" if ingredient is disabled
+            if ingredient.disabled then
+                setXMLBool(xmlFile, ingredientKey .. "#disabled", true)
+            end
         end
 
         RmLogging.logDebug("Saved mixture %s for %s", mixture.fillType, mixture.animalType)
@@ -185,6 +279,18 @@ function RmAafXmlOperations:saveToXML(data, filePath)
         local recipeKey = string.format("animalFood.recipes.recipe(%d)", recipeIndex - 1)
         setXMLString(xmlFile, recipeKey .. "#fillType", recipe.fillType)
 
+        -- Add example for first recipe showing how to disable an ingredient
+        if recipeIndex == 1 then
+            local exampleKey = recipeKey .. ".example"
+            setXMLString(xmlFile, exampleKey .. "#description", "EXAMPLE: To disable an ingredient, add disabled=\"true\" to any ingredient line below")
+            setXMLString(xmlFile, exampleKey .. ".ingredient#name", "exampleIngredient")
+            setXMLString(xmlFile, exampleKey .. ".ingredient#title", "Example Ingredient")
+            setXMLInt(xmlFile, exampleKey .. ".ingredient#minPercentage", 0)
+            setXMLInt(xmlFile, exampleKey .. ".ingredient#maxPercentage", 100)
+            setXMLString(xmlFile, exampleKey .. ".ingredient#fillTypes", "EXAMPLE_FILLTYPE")
+            setXMLBool(xmlFile, exampleKey .. ".ingredient#disabled", true)
+        end
+
         for ingredientIndex, ingredient in ipairs(recipe.ingredients) do
             local ingredientKey = string.format("%s.ingredient(%d)", recipeKey, ingredientIndex - 1)
             setXMLString(xmlFile, ingredientKey .. "#name", ingredient.name)
@@ -192,6 +298,11 @@ function RmAafXmlOperations:saveToXML(data, filePath)
             setXMLInt(xmlFile, ingredientKey .. "#minPercentage", ingredient.minPercentage)
             setXMLInt(xmlFile, ingredientKey .. "#maxPercentage", ingredient.maxPercentage)
             setXMLString(xmlFile, ingredientKey .. "#fillTypes", ingredient.fillTypes)
+
+            -- Only write disabled="true" if ingredient is disabled
+            if ingredient.disabled then
+                setXMLBool(xmlFile, ingredientKey .. "#disabled", true)
+            end
         end
 
         RmLogging.logDebug("Saved recipe %s with %d ingredients", recipe.fillType, #recipe.ingredients)

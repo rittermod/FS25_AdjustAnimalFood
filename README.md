@@ -10,16 +10,18 @@ Supports multiplayer.
 
 **Beta Software:** Please back up your savegames before use. The mod is fully functional but still in beta testing.
 
-**At the moment, you cannot add/remove food groups, change name of food groups etc. Only change the weights and what fillTypes are in the groups.**
+**You can disable food groups, mixture ingredients, and recipe ingredients. You can change weights and fillTypes. You cannot add new animal types or change food group names.**
 
 Documentation, source code and issue tracker at https://github.com/rittermod/FS25_AdjustAnimalFood
 
 ## Features
 
 - **Animal Food Control**: Modify food group effectiveness (productionWeight) and consumption preferences (eatWeight) for all animal types
+- **Disable Food Groups & Ingredients**: Remove unwanted food groups, mixture ingredients, or recipe ingredients from the game
 - **Custom Crop Assignments**: Add or remove crops from any food group (e.g., add oat to chicken feed, allow cows to eat alfalfa silage)
 - **Mixed Feed Customization**: Adjust ingredient proportions and crop types for mixed feeds like pig food
 - **Recipe Control**: Customize recipes with precise min/max percentage ranges for each ingredient
+- **Automatic Normalization**: Remaining ingredients automatically adjust when you disable or modify items
 - **Schema-Validated Configuration**: Uses the game's built-in AnimalFoodSystem schema for robust, error-checked XML handling
 - **Intelligent Merging**: Your XML overrides customizations while automatically adding new content from mods or game updates
 - **Per-Savegame Configuration**: Each savegame gets its own XML file for independent customization
@@ -51,6 +53,7 @@ The mod works through XML configuration files that are automatically created for
 ### Making Changes
 
 - The XML file contains all current game defaults when first created
+- **The file includes documentation and examples** showing how to use features like disabling items
 - Edit any values you want to change (see Configuration Reference below)
 - Values you don't change remain at game defaults
 - Changes are applied every time you load the savegame
@@ -85,6 +88,7 @@ Controls food group effectiveness and crop assignments for each animal type.
 - `productionWeight`: Food effectiveness (0.0-1.0) - higher means better productivity
 - `eatWeight`: Consumption preference (0.0-1.0) - affects PARALLEL consumption animals only
 - `fillTypes`: Space-separated crop names that belong to this food group. Most animal pens will only accept bulk or bale fillTypes and not pallets. (If you want your animals to eat cake the pen must have a pallet trigger. Not tested.)
+- `disabled`: Set to `"true"` to remove this food group from the game (animals won't accept this food type)
 
 **What You Cannot Change:**
 - `animalType`: Used for matching only - can't add new animal types
@@ -107,10 +111,13 @@ Controls mixed feed recipes and ingredient proportions.
 **What You Can Change:**
 - `weight`: Ingredient proportion (any positive number - automatically normalized to 1.0)
 - `fillTypes`: Space-separated crop names for this ingredient slot
+- `disabled` (on ingredient): Set to `"true"` to remove this ingredient from the mixture
 
 **Notes:**
 - Weights are automatically normalized (if you use 50, 25, 20, 5 they become 0.5, 0.25, 0.2, 0.05)
+- When you disable an ingredient, remaining ingredients are automatically renormalized
 - Ingredient order must match the game's order (usually matches the order in the XML)
+- You cannot disable entire mixtures, only individual ingredients
 
 ### Recipes Section
 
@@ -137,6 +144,7 @@ Controls TMR/Forage recipes for mixing wagons.
 - `minPercentage`: Minimum percentage (0-100) for this ingredient
 - `maxPercentage`: Maximum percentage (0-100) for this ingredient
 - `fillTypes`: Space-separated crop names for this ingredient
+- `disabled` (on ingredient): Set to `"true"` to remove this ingredient from the recipe
 
 **What You Cannot Change:**
 - `name`: Internal identifier - must match game
@@ -145,6 +153,8 @@ Controls TMR/Forage recipes for mixing wagons.
 **Notes:**
 - Percentages define the valid range for the mixing wagon UI
 - Ratios are automatically normalized based on your min/max ranges
+- When you disable an ingredient, it's completely removed from the TMR mixer UI
+- You cannot disable entire recipes, only individual ingredients
 
 ## Practical Examples
 
@@ -202,6 +212,46 @@ ALFALFA_FERMENTED to the silage ingredient if the map has alfalfa silage:
 ```
 
 You can now use either grass silage or alfalfa silage in your TMR.
+
+### Disable Hay for Cows
+
+Don't want cows to eat hay? Add `disabled="true"` to the hay food group:
+
+```xml
+<foodGroup title="Hay" productionWeight="0.80" eatWeight="1.00" fillTypes="DRYGRASS_WINDROW" disabled="true"/>
+```
+
+Cows will no longer accept hay. The food group is completely removed from the game but stays in your XML file.
+
+### Remove Grain from Pig Feed
+
+Want to exclude wheat and barley from your pig feed mix? Disable the grain ingredient:
+
+```xml
+<mixture fillType="PIGFOOD" animalType="PIG">
+    <ingredient weight="0.50" fillTypes="MAIZE TRITICALE"/>
+    <ingredient weight="0.25" fillTypes="WHEAT BARLEY" disabled="true"/>  <!-- Grain excluded -->
+    <ingredient weight="0.20" fillTypes="SOYBEAN CANOLA"/>
+    <ingredient weight="0.05" fillTypes="POTATO SUGARBEET_CUT"/>
+</mixture>
+```
+
+The remaining ingredients automatically adjust: Base 66.6%, Protein 26.6%, Roots 6.6%.
+
+### Exclude Straw from TMR Recipe
+
+Don't want straw in your TMR? Disable the straw ingredient:
+
+```xml
+<recipe fillType="FORAGE">
+    <ingredient name="silage" title="Silage" minPercentage="0" maxPercentage="75" fillTypes="SILAGE"/>
+    <ingredient name="straw" title="Straw" minPercentage="10" maxPercentage="30" fillTypes="STRAW" disabled="true"/>
+    <ingredient name="dryGrass" title="Hay" minPercentage="20" maxPercentage="50" fillTypes="DRYGRASS_WINDROW"/>
+    <ingredient name="mineralFeed" title="Mineral Feed" minPercentage="0" maxPercentage="10" fillTypes="MINERAL_FEED"/>
+</recipe>
+```
+
+Your TMR mixer will only show 3 ingredient slots instead of 4.
 
 ## How It Works
 
