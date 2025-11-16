@@ -48,6 +48,7 @@ function RmAnimalFoodSyncEvent:writeStream(streamId, connection)
             streamWriteFloat32(streamId, group.productionWeight)
             streamWriteFloat32(streamId, group.eatWeight)
             streamWriteString(streamId, group.fillTypes)
+            streamWriteBool(streamId, group.disabled or false)
         end
     end
 
@@ -62,6 +63,7 @@ function RmAnimalFoodSyncEvent:writeStream(streamId, connection)
         for _, ingredient in ipairs(mixture.ingredients) do
             streamWriteFloat32(streamId, ingredient.weight)
             streamWriteString(streamId, ingredient.fillTypes)
+            streamWriteBool(streamId, ingredient.disabled or false)
         end
     end
 
@@ -78,6 +80,7 @@ function RmAnimalFoodSyncEvent:writeStream(streamId, connection)
             streamWriteInt32(streamId, ingredient.minPercentage)
             streamWriteInt32(streamId, ingredient.maxPercentage)
             streamWriteString(streamId, ingredient.fillTypes)
+            streamWriteBool(streamId, ingredient.disabled or false)
         end
     end
 end
@@ -102,7 +105,8 @@ function RmAnimalFoodSyncEvent:readStream(streamId, connection)
                 title = streamReadString(streamId),
                 productionWeight = streamReadFloat32(streamId),
                 eatWeight = streamReadFloat32(streamId),
-                fillTypes = streamReadString(streamId)
+                fillTypes = streamReadString(streamId),
+                disabled = streamReadBool(streamId)
             })
         end
 
@@ -123,7 +127,8 @@ function RmAnimalFoodSyncEvent:readStream(streamId, connection)
         for j = 1, ingredientCount do
             table.insert(mixture.ingredients, {
                 weight = streamReadFloat32(streamId),
-                fillTypes = streamReadString(streamId)
+                fillTypes = streamReadString(streamId),
+                disabled = streamReadBool(streamId)
             })
         end
 
@@ -146,7 +151,8 @@ function RmAnimalFoodSyncEvent:readStream(streamId, connection)
                 title = streamReadString(streamId),
                 minPercentage = streamReadInt32(streamId),
                 maxPercentage = streamReadInt32(streamId),
-                fillTypes = streamReadString(streamId)
+                fillTypes = streamReadString(streamId),
+                disabled = streamReadBool(streamId)
             })
         end
 
