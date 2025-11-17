@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <modDesc descVersion="100">
     <author>Ritter</author>
-    <version>0.9.0.0</version>
+    <version>0.10.0.0</version>
 
     <title>
         <en>Adjust Animal Food</en>
@@ -16,13 +16,22 @@ Notice:
 - Customizations are done by editing an XML file generated in your savegame folder. No in-game UI is provided.
 
 Customize aspects of animal feeding without modifying map files:
-- Food effectiveness (productionWeight, eatWeight)
-- Which crops belong to each food group (fillTypes)
-- Mixed feed recipes and ingredient proportions
-- TMR/forage recipe compositions and ranges
+- Add custom food groups to animals and custom ingredients to mixtures/recipes
+- Disable unwanted food groups or ingredients (except Grass)
+- Adjust food effectiveness (productionWeight, eatWeight)
+- Change which crops belong to each food group (fillTypes)
+- Modify mixed feed recipes and ingredient proportions
+- Customize TMR/forage recipe compositions and ranges
+
+Limitations (what this mod CANNOT do):
+- Cannot disable the Grass food group - causes game hang. You can change its weights.
+- Cannot delete or add new animal types (only modify existing animals like COW, PIG, CHICKEN, SHEEP, HORSE)
+- Cannot delete or add new mixtures/recipes (only modify existing ones like PIGFOOD, FORAGE)
+- Cannot change consumption types (SERIAL vs PARALLEL)
+- Cannot change internal names or titles (these are used for matching only)
 
 Usage:
-- Configuration file (aaf_AnimalFood.xml) is automatically created in your savegame folder on first load.
+- Configuration file (aaf_AnimalFood.xml) is automatically created in your savegame folder on first game save.
 - Exit the game and locate the XML file in your savegame directory.
 - Edit the XML to customize your animal feeding system.
 - Changes take effect on every savegame load as long as the mod is active and the XML file is present.
@@ -30,12 +39,19 @@ Usage:
 Documentation, source code and issue tracker at https://github.com/rittermod/FS25_AdjustAnimalFood
 
 Changelog:
-  0.9.0.0:
-  - Added disabling feature for food groups and ingredients
-  - Generated XML files now include inline documentation and examples
-  - Disabled items are preserved in XML across save cycles
-  - Automatic weight/ratio normalization when items are disabled
-  
+0.10.0.0:
+- Added custom content support: add food groups to animals, ingredients to mixtures and recipes
+- Custom additions persist through save/reload cycles
+- XML order preserved for food groups (affects UI display)
+- Automatic validation and normalization of custom content
+- Full compatibility with map-added content
+
+0.9.0.0:
+- Added disabling feature for food groups and ingredients
+- Generated XML files now include inline documentation and examples
+- Disabled items are preserved in XML across save cycles
+- Automatic weight/ratio normalization when items are disabled
+
 0.8.0.0:
 - Added multiplayer support
 - Improved code stability and performance
