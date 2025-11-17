@@ -10,16 +10,20 @@ Supports multiplayer.
 
 **Beta Software:** Please back up your savegames before use. The mod is fully functional but still in beta testing.
 
-As of now (Version 0.9.0.0)
-
+As of version 0.10.0.0
 You can:
-* change weights, fillTypes and percentages in the food groups and ingredients. 
-* disable food groups, mixture ingredients, and recipe ingredients. 
+- Add custom food groups to animals and custom ingredients to mixtures/recipes
+- Disable unwanted food groups or ingredients
+- Adjust food effectiveness (productionWeight, eatWeight)
+- Change which crops belong to each food group (fillTypes)
+- Modify mixed feed recipes and ingredient proportions
+- Customize TMR/forage recipe compositions and ranges
 
 You **cannot**:
-* add new food groups, mixtures, or recipes.
-* change animal types or consumption types.
-* change internal names or titles (these are used for matching only).
+- Cannot delete or add new animal types (only modify existing animals like COW, PIG, CHICKEN, SHEEP, HORSE)
+- Cannot delete or add new mixtures/recipes (only modify existing ones like PIGFOOD, FORAGE)
+- Cannot change consumption types (SERIAL vs PARALLEL)
+- Cannot change internal names or titles (these are used for matching only)
 
 
 Documentation, source code and issue tracker at https://github.com/rittermod/FS25_AdjustAnimalFood
@@ -27,6 +31,7 @@ Documentation, source code and issue tracker at https://github.com/rittermod/FS2
 ## Features
 
 - **Animal Food Control**: Modify food group effectiveness (productionWeight) and consumption preferences (eatWeight) for all animal types
+- **Add Custom Content**: Add custom food groups to animals, extra ingredients to mixtures, and additional ingredients to TMR recipes
 - **Disable Food Groups & Ingredients**: Remove unwanted food groups, mixture ingredients, or recipe ingredients from the game
 - **Custom Crop Assignments**: Add or remove crops from any food group (e.g., add oat to chicken feed, allow cows to eat alfalfa silage)
 - **Mixed Feed Customization**: Adjust ingredient proportions and crop types for mixed feeds like pig food
@@ -53,7 +58,7 @@ The mod works through XML configuration files that are automatically created for
 ### First Time Setup
 
 1. **Start your game** with the mod installed and load your savegame
-2. **Exit the game** - the mod will create `aaf_AnimalFood.xml` in your savegame folder
+2. **Save and exit the game** - the mod will create `aaf_AnimalFood.xml` in your savegame folder
 3. **Locate the XML file** in your savegame directory:
    - Windows: `Documents/My Games/FarmingSimulator2025/savegameX/aaf_AnimalFood.xml`
    - macOS: `~/Library/Application Support/FarmingSimulator2025/savegameX/aaf_AnimalFood.xml`
@@ -71,9 +76,11 @@ The mod works through XML configuration files that are automatically created for
 
 ### Important Notes
 
+- **5-Entry Limit**: Keep total **active** (non-disabled) food groups/ingredients to **5 or fewer** per animal/mixture/recipe. The game may not display or handle more than 5 correctly. If you want to add custom entries, consider disabling existing ones first.
+- **CRITICAL - Never Disable Grass**: Do NOT disable the Grass food group for any animal. The game's Meadow system has an internal dependency on Grass configuration and disabling it will cause the game to hang. Other food groups may have similar hidden dependencies - disable with caution.
 - **Language-Specific**: The generated XML uses your game's language (e.g., "Hay" in English, "Heu" in German)
 - **Backup First**: Always back up your XML before making major changes
-- **Order Matters**: For mixtures and recipes, ingredient order must match the game's order
+- **Order Matters**: Keep the order of food groups and ingredients in the order they should appear in the UI display
 - **Invalid Values**: Unknown crop names or invalid values will be logged but won't crash the game
 
 ## Configuration Reference
@@ -168,15 +175,21 @@ Controls TMR/Forage recipes for mixing wagons.
 
 ## Practical Examples
 
-### Make Hay More Effective for Cows
+### Simple: Adjust Food Effectiveness (Weights)
 
-Find the hay food group for cows and increase productionWeight:
+The most common use case is adjusting how effective different foods are. Values range from 0.0 to 1.0.
 
+**Make hay more effective for cows (increase from 0.8 to 1.0):**
 ```xml
 <foodGroup title="Hay" productionWeight="1.0" eatWeight="1.00" fillTypes="DRYGRASS_WINDROW"/>
 ```
 
-Now hay provides 100% food effectiveness.
+**Make straw less effective (decrease from 0.2 to 0.1):**
+```xml
+<foodGroup title="Straw" productionWeight="0.1" eatWeight="1.00" fillTypes="STRAW"/>
+```
+
+Values between 0.0 and 1.0 where higher = more effective for animal productivity.
 
 ### Add Oat to Chicken Feed
 
@@ -262,6 +275,44 @@ Don't want straw in your TMR? Disable the straw ingredient:
 ```
 
 Your TMR mixer will only show 3 ingredient slots instead of 4.
+
+### Advanced: Add Custom Food Type (Staying Within 5-Entry Limit)
+
+Want to add a custom food group? Remember the 5-entry limit! COW has 4 vanilla food groups, so you can safely add 1 custom food OR disable one vanilla and add a custom replacement.
+
+**Option 1: Add custom when under 5 (COW has 4, adding 1 = 5 total):**
+```xml
+<animal animalType="COW" consumptionType="SERIAL">
+    <!-- 4 existing vanilla food groups -->
+    <foodGroup title="Total Mixed Ration" productionWeight="1.0" eatWeight="1.0" fillTypes="FORAGE"/>
+    <foodGroup title="Hay" productionWeight="0.8" eatWeight="1.0" fillTypes="DRYGRASS_WINDROW"/>
+    <foodGroup title="Silage" productionWeight="0.8" eatWeight="1.0" fillTypes="SILAGE"/>
+    <foodGroup title="Grass" productionWeight="0.4" eatWeight="1.0" fillTypes="GRASS_WINDROW"/>
+
+    <!-- Add custom 5th food group -->
+    <foodGroup title="Oat" productionWeight="1.0" eatWeight="1.0" fillTypes="OAT"/>
+</animal>
+```
+
+**Option 2: Disable one + add custom (stay at 4 active):**
+```xml
+<animal animalType="COW" consumptionType="SERIAL">
+    <foodGroup title="Total Mixed Ration" productionWeight="1.0" eatWeight="1.0" fillTypes="FORAGE"/>
+    <foodGroup title="Hay" productionWeight="0.8" eatWeight="1.0" fillTypes="DRYGRASS_WINDROW"/>
+    <foodGroup title="Silage" productionWeight="0.8" eatWeight="1.0" fillTypes="SILAGE"/>
+    <foodGroup title="Grass" productionWeight="0.4" eatWeight="1.0" fillTypes="GRASS_WINDROW" disabled="true"/>  <!-- Disable -->
+    <foodGroup title="Oat" productionWeight="1.0" eatWeight="1.0" fillTypes="OAT"/>  <!-- Add custom -->
+</animal>
+```
+
+**⚠️ Don't do this (6 active entries will cause problems):**
+```xml
+<!-- BAD: 4 vanilla + 2 custom = 6 active entries -->
+<foodGroup title="Oat" productionWeight="1.0" eatWeight="1.0" fillTypes="OAT"/>
+<foodGroup title="Barley" productionWeight="1.0" eatWeight="1.0" fillTypes="BARLEY"/>
+```
+
+Same principle applies to mixtures and recipes - keep active entries ≤ 5.
 
 ## How It Works
 

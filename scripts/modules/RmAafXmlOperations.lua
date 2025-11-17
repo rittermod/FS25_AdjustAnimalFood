@@ -33,38 +33,52 @@ function RmAafXmlOperations:loadFromXML(filePath)
     local schema = AnimalFoodSystem.xmlSchema
     if schema then
         -- Register disabled attribute for food groups
-        schema:register(XMLValueType.BOOL, "animalFood.animals.animal(?).foodGroup(?)#disabled", "Disable this food group")
+        schema:register(XMLValueType.BOOL, "animalFood.animals.animal(?).foodGroup(?)#disabled",
+            "Disable this food group")
 
         -- Register disabled attribute for mixture and recipe ingredients
         -- Note: Entire mixtures/recipes cannot be disabled, but individual ingredients can be
-        schema:register(XMLValueType.BOOL, "animalFood.mixtures.mixture(?).ingredient(?)#disabled", "Disable this ingredient")
-        schema:register(XMLValueType.BOOL, "animalFood.recipes.recipe(?).ingredient(?)#disabled", "Disable this ingredient")
+        schema:register(XMLValueType.BOOL, "animalFood.mixtures.mixture(?).ingredient(?)#disabled",
+            "Disable this ingredient")
+        schema:register(XMLValueType.BOOL, "animalFood.recipes.recipe(?).ingredient(?)#disabled",
+            "Disable this ingredient")
 
         -- Register documentation element (written but ignored on load)
         schema:register(XMLValueType.STRING, "animalFood.documentation", "User documentation")
 
         -- Register example elements for animals (written but ignored on load)
         schema:register(XMLValueType.STRING, "animalFood.animals.animal(?).example#description", "Example description")
-        schema:register(XMLValueType.STRING, "animalFood.animals.animal(?).example.foodGroup#title", "Example food group title")
-        schema:register(XMLValueType.FLOAT, "animalFood.animals.animal(?).example.foodGroup#productionWeight", "Example production weight")
-        schema:register(XMLValueType.FLOAT, "animalFood.animals.animal(?).example.foodGroup#eatWeight", "Example eat weight")
-        schema:register(XMLValueType.STRING, "animalFood.animals.animal(?).example.foodGroup#fillTypes", "Example fill types")
-        schema:register(XMLValueType.BOOL, "animalFood.animals.animal(?).example.foodGroup#disabled", "Example disabled flag")
+        schema:register(XMLValueType.STRING, "animalFood.animals.animal(?).example.foodGroup#title",
+            "Example food group title")
+        schema:register(XMLValueType.FLOAT, "animalFood.animals.animal(?).example.foodGroup#productionWeight",
+            "Example production weight")
+        schema:register(XMLValueType.FLOAT, "animalFood.animals.animal(?).example.foodGroup#eatWeight",
+            "Example eat weight")
+        schema:register(XMLValueType.STRING, "animalFood.animals.animal(?).example.foodGroup#fillTypes",
+            "Example fill types")
+        schema:register(XMLValueType.BOOL, "animalFood.animals.animal(?).example.foodGroup#disabled",
+            "Example disabled flag")
 
         -- Register example elements for mixtures (written but ignored on load)
         schema:register(XMLValueType.STRING, "animalFood.mixtures.mixture(?).example#description", "Example description")
         schema:register(XMLValueType.FLOAT, "animalFood.mixtures.mixture(?).example.ingredient#weight", "Example weight")
-        schema:register(XMLValueType.STRING, "animalFood.mixtures.mixture(?).example.ingredient#fillTypes", "Example fill types")
-        schema:register(XMLValueType.BOOL, "animalFood.mixtures.mixture(?).example.ingredient#disabled", "Example disabled flag")
+        schema:register(XMLValueType.STRING, "animalFood.mixtures.mixture(?).example.ingredient#fillTypes",
+            "Example fill types")
+        schema:register(XMLValueType.BOOL, "animalFood.mixtures.mixture(?).example.ingredient#disabled",
+            "Example disabled flag")
 
         -- Register example elements for recipes (written but ignored on load)
         schema:register(XMLValueType.STRING, "animalFood.recipes.recipe(?).example#description", "Example description")
         schema:register(XMLValueType.STRING, "animalFood.recipes.recipe(?).example.ingredient#name", "Example name")
         schema:register(XMLValueType.STRING, "animalFood.recipes.recipe(?).example.ingredient#title", "Example title")
-        schema:register(XMLValueType.INT, "animalFood.recipes.recipe(?).example.ingredient#minPercentage", "Example min percentage")
-        schema:register(XMLValueType.INT, "animalFood.recipes.recipe(?).example.ingredient#maxPercentage", "Example max percentage")
-        schema:register(XMLValueType.STRING, "animalFood.recipes.recipe(?).example.ingredient#fillTypes", "Example fill types")
-        schema:register(XMLValueType.BOOL, "animalFood.recipes.recipe(?).example.ingredient#disabled", "Example disabled flag")
+        schema:register(XMLValueType.INT, "animalFood.recipes.recipe(?).example.ingredient#minPercentage",
+            "Example min percentage")
+        schema:register(XMLValueType.INT, "animalFood.recipes.recipe(?).example.ingredient#maxPercentage",
+            "Example max percentage")
+        schema:register(XMLValueType.STRING, "animalFood.recipes.recipe(?).example.ingredient#fillTypes",
+            "Example fill types")
+        schema:register(XMLValueType.BOOL, "animalFood.recipes.recipe(?).example.ingredient#disabled",
+            "Example disabled flag")
     end
 
     local xmlFile = XMLFile.load("animalFoodAdjust", filePath, schema)
@@ -202,13 +216,31 @@ function RmAafXmlOperations:saveToXML(data, filePath)
     end
 
     -- Write documentation element (will be ignored during load)
-    local docText = [[DISABLING FEATURE:
-- Add disabled="true" to any food group, mixture ingredient, or recipe ingredient to disable it
-- Disabled items are removed from the game but preserved in this file
-- When you save, disabled items remain and won't be re-added
-- Remaining items automatically normalize their weights/percentages
+    local docText = [[IMPORTANT: 5-ENTRY LIMIT
+Keep total ACTIVE (non-disabled) food groups/ingredients to 5 or fewer per animal/mixture/recipe.
+The game UI may not display or handle more than 5 correctly. If adding custom entries, consider disabling existing ones.
 
-See examples below showing how to add disabled="true" to your own lines.
+WARNING: NEVER DISABLE GRASS!
+Do NOT disable the Grass food group - the game's Meadow system depends on it and disabling causes game hang.
+Other food groups may have hidden dependencies. Disable with caution and test thoroughly.
+Adjust weights/fillTypes instead of disabling when unsure.
+
+SIMPLE USE CASES:
+
+1. ADJUST FOOD EFFECTIVENESS (productionWeight):
+   Change productionWeight to make food more/less effective (range: 0.0 to 1.0, higher = better)
+   Example: foodGroup title="Hay" productionWeight="1.0" eatWeight="1.0" fillTypes="DRYGRASS_WINDROW"
+
+2. ADD CROPS TO FOOD GROUP (fillTypes):
+   Add space-separated crop names to existing food groups
+   Example: foodGroup title="Grain" fillTypes="WHEAT BARLEY SORGHUM OAT"
+
+3. DISABLE UNWANTED ITEMS:
+   Add disabled="true" to any food group, mixture ingredient, or recipe ingredient
+   Disabled items are removed from game but preserved in this file
+   Remaining items automatically normalize their weights/percentages
+
+See examples below for each section.
 Full documentation: https://github.com/rittermod/FS25_AdjustAnimalFood]]
     setXMLString(xmlFile, "animalFood.documentation", docText)
 
@@ -218,14 +250,15 @@ Full documentation: https://github.com/rittermod/FS25_AdjustAnimalFood]]
         setXMLString(xmlFile, animalKey .. "#animalType", animal.animalType)
         setXMLString(xmlFile, animalKey .. "#consumptionType", animal.consumptionType)
 
-        -- Add example for first animal showing how to disable a food group
+        -- Add example for first animal showing weight adjustment and fillTypes modification
         if animalIndex == 1 then
             local exampleKey = animalKey .. ".example"
-            setXMLString(xmlFile, exampleKey .. "#description", "EXAMPLE: To disable a food group, add disabled=\"true\" to any foodGroup line below")
+            setXMLString(xmlFile, exampleKey .. "#description",
+                "EXAMPLES: (1) Adjust productionWeight to change effectiveness (0.0-1.0, higher=better). (2) Add crops to fillTypes space-separated. (3) Add disabled=\"true\" to disable.")
             setXMLString(xmlFile, exampleKey .. ".foodGroup#title", "ExampleFoodGroup")
-            setXMLFloat(xmlFile, exampleKey .. ".foodGroup#productionWeight", 1.0)
+            setXMLFloat(xmlFile, exampleKey .. ".foodGroup#productionWeight", 0.9)
             setXMLFloat(xmlFile, exampleKey .. ".foodGroup#eatWeight", 1.0)
-            setXMLString(xmlFile, exampleKey .. ".foodGroup#fillTypes", "EXAMPLE_FILLTYPE")
+            setXMLString(xmlFile, exampleKey .. ".foodGroup#fillTypes", "EXAMPLE_FILLTYPE1 EXAMPLE_FILLTYPE2")
             setXMLBool(xmlFile, exampleKey .. ".foodGroup#disabled", true)
         end
 
@@ -251,12 +284,13 @@ Full documentation: https://github.com/rittermod/FS25_AdjustAnimalFood]]
         setXMLString(xmlFile, mixtureKey .. "#fillType", mixture.fillType)
         setXMLString(xmlFile, mixtureKey .. "#animalType", mixture.animalType)
 
-        -- Add example for first mixture showing how to disable an ingredient
+        -- Add example for first mixture showing weight adjustment and fillTypes modification
         if mixtureIndex == 1 then
             local exampleKey = mixtureKey .. ".example"
-            setXMLString(xmlFile, exampleKey .. "#description", "EXAMPLE: To disable an ingredient, add disabled=\"true\" to any ingredient line below")
-            setXMLFloat(xmlFile, exampleKey .. ".ingredient#weight", 1.0)
-            setXMLString(xmlFile, exampleKey .. ".ingredient#fillTypes", "EXAMPLE_FILLTYPE")
+            setXMLString(xmlFile, exampleKey .. "#description",
+                "EXAMPLES: (1) Adjust weight to change proportions (auto-normalized to 100%). (2) Add crops to fillTypes space-separated. (3) Add disabled=\"true\" to disable.")
+            setXMLFloat(xmlFile, exampleKey .. ".ingredient#weight", 0.3)
+            setXMLString(xmlFile, exampleKey .. ".ingredient#fillTypes", "EXAMPLE_FILLTYPE1 EXAMPLE_FILLTYPE2")
             setXMLBool(xmlFile, exampleKey .. ".ingredient#disabled", true)
         end
 
@@ -279,15 +313,16 @@ Full documentation: https://github.com/rittermod/FS25_AdjustAnimalFood]]
         local recipeKey = string.format("animalFood.recipes.recipe(%d)", recipeIndex - 1)
         setXMLString(xmlFile, recipeKey .. "#fillType", recipe.fillType)
 
-        -- Add example for first recipe showing how to disable an ingredient
+        -- Add example for first recipe showing percentage adjustment and fillTypes modification
         if recipeIndex == 1 then
             local exampleKey = recipeKey .. ".example"
-            setXMLString(xmlFile, exampleKey .. "#description", "EXAMPLE: To disable an ingredient, add disabled=\"true\" to any ingredient line below")
+            setXMLString(xmlFile, exampleKey .. "#description",
+                "EXAMPLES: (1) Adjust min/maxPercentage to change recipe flexibility (0-100, auto-normalized). (2) Add crops to fillTypes space-separated. (3) Add disabled=\"true\" to disable.")
             setXMLString(xmlFile, exampleKey .. ".ingredient#name", "exampleIngredient")
             setXMLString(xmlFile, exampleKey .. ".ingredient#title", "Example Ingredient")
-            setXMLInt(xmlFile, exampleKey .. ".ingredient#minPercentage", 0)
-            setXMLInt(xmlFile, exampleKey .. ".ingredient#maxPercentage", 100)
-            setXMLString(xmlFile, exampleKey .. ".ingredient#fillTypes", "EXAMPLE_FILLTYPE")
+            setXMLInt(xmlFile, exampleKey .. ".ingredient#minPercentage", 10)
+            setXMLInt(xmlFile, exampleKey .. ".ingredient#maxPercentage", 50)
+            setXMLString(xmlFile, exampleKey .. ".ingredient#fillTypes", "EXAMPLE_FILLTYPE1 EXAMPLE_FILLTYPE2")
             setXMLBool(xmlFile, exampleKey .. ".ingredient#disabled", true)
         end
 

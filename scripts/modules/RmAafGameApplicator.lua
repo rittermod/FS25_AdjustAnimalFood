@@ -37,33 +37,71 @@ local function applyAnimalsToGame(animals, foodSystem)
                     groupsByTitle[group.title] = group
                 end
 
-                -- Apply values from configuration
+                -- First loop: UPDATE existing food groups
                 for _, configGroup in ipairs(animalData.foodGroups) do
-                    -- Skip disabled items - they will be removed later
                     if not configGroup.disabled then
                         local gameGroup = groupsByTitle[configGroup.title]
 
                         if gameGroup then
-                        -- Apply production and eat weights
-                        gameGroup.productionWeight = configGroup.productionWeight
-                        gameGroup.eatWeight = configGroup.eatWeight
+                            -- Apply production and eat weights
+                            gameGroup.productionWeight = configGroup.productionWeight
+                            gameGroup.eatWeight = configGroup.eatWeight
 
-                        -- Apply fillTypes if changed
-                        if configGroup.fillTypes then
-                            local context = animalData.animalType .. " / " .. configGroup.title
-                            local newFillTypes = RmAafDataConverters.parseFillTypesFromString(configGroup.fillTypes,
-                                context)
+                            -- Apply fillTypes if changed
+                            if configGroup.fillTypes then
+                                local context = animalData.animalType .. " / " .. configGroup.title
+                                local newFillTypes = RmAafDataConverters.parseFillTypesFromString(configGroup.fillTypes,
+                                    context)
 
-                            if newFillTypes then
-                                gameGroup.fillTypes = newFillTypes
-                                RmLogging.logDebug("Applied fillTypes for %s: %s", context, configGroup.fillTypes)
+                                if newFillTypes then
+                                    gameGroup.fillTypes = newFillTypes
+                                    RmLogging.logDebug("Applied fillTypes for %s: %s", context, configGroup.fillTypes)
+                                end
                             end
-                        end
 
                             applied = applied + 1
                             RmLogging.logDebug("Applied %s / %s: prodWeight=%.3f, eatWeight=%.3f",
                                 animalData.animalType, configGroup.title,
                                 configGroup.productionWeight, configGroup.eatWeight)
+                        end
+                        -- gameGroup is nil = custom addition, handled in next loop
+                    end
+                end
+
+                -- Second loop: INSERT custom food groups
+                for i, configGroup in ipairs(animalData.foodGroups) do
+                    if not configGroup.disabled then
+                        local gameGroup = groupsByTitle[configGroup.title]
+
+                        if not gameGroup then
+                            -- This is a custom addition, not in game
+
+                            -- Validate fillTypes before insertion
+                            local context = animalData.animalType .. " / " .. configGroup.title
+                            local fillTypeIndices = RmAafDataConverters.parseFillTypesFromString(
+                                configGroup.fillTypes, context)
+
+                            if fillTypeIndices then
+                                -- Create new food group
+                                local newGroup = {
+                                    title = configGroup.title,
+                                    productionWeight = configGroup.productionWeight,
+                                    eatWeight = configGroup.eatWeight,
+                                    fillTypes = fillTypeIndices
+                                }
+
+                                -- Insert at XML position to preserve ordering
+                                -- If XML position > array length, append at end
+                                local insertPosition = math.min(i, #animalFood.groups + 1)
+                                table.insert(animalFood.groups, insertPosition, newGroup)
+
+                                applied = applied + 1
+                                RmLogging.logInfo("Added custom food group: %s / %s at position %d",
+                                    animalData.animalType, configGroup.title, insertPosition)
+                            else
+                                RmLogging.logWarning("Cannot add custom food group %s / %s: all fillTypes invalid",
+                                    animalData.animalType, configGroup.title)
+                            end
                         end
                     end
                 end
@@ -103,23 +141,47 @@ local function applyMixturesToGame(mixtures, foodSystem)
             local gameMixture = foodSystem:getMixtureByFillType(fillTypeIndex)
 
             if gameMixture then
-                -- Apply ingredient weights and fillTypes for non-disabled ingredients
+                -- Apply configuration to ingredients (update existing + insert new)
                 for i, configIngredient in ipairs(mixtureData.ingredients) do
-                    -- Skip disabled ingredients - they will be removed later
-                    if not configIngredient.disabled and gameMixture.ingredients[i] then
+                    if not configIngredient.disabled then
                         local gameIngredient = gameMixture.ingredients[i]
 
-                        -- Apply weight
-                        gameIngredient.weight = configIngredient.weight
+                        if gameIngredient then
+                            -- UPDATE existing ingredient
+                            gameIngredient.weight = configIngredient.weight
 
-                        -- Apply fillTypes
-                        if configIngredient.fillTypes then
-                            local context = string.format("mixture %s ingredient %d", mixtureData.fillType, i)
-                            local newFillTypes = RmAafDataConverters.parseFillTypesFromString(configIngredient.fillTypes,
-                                context)
+                            if configIngredient.fillTypes then
+                                local context = string.format("mixture %s ingredient %d",
+                                    mixtureData.fillType, i)
+                                local newFillTypes = RmAafDataConverters.parseFillTypesFromString(
+                                    configIngredient.fillTypes, context)
 
-                            if newFillTypes then
-                                gameIngredient.fillTypes = newFillTypes
+                                if newFillTypes then
+                                    gameIngredient.fillTypes = newFillTypes
+                                end
+                            end
+
+                            RmLogging.logDebug("Applied ingredient %d for mixture %s: weight=%.3f",
+                                i, mixtureData.fillType, configIngredient.weight)
+                        else
+                            -- INSERT new ingredient (custom addition)
+                            local context = string.format("mixture %s ingredient %d",
+                                mixtureData.fillType, i)
+                            local fillTypeIndices = RmAafDataConverters.parseFillTypesFromString(
+                                configIngredient.fillTypes, context)
+
+                            if fillTypeIndices then
+                                local newIngredient = {
+                                    weight = configIngredient.weight,
+                                    fillTypes = fillTypeIndices
+                                }
+
+                                table.insert(gameMixture.ingredients, newIngredient)
+                                RmLogging.logInfo("Added custom ingredient %d to mixture %s",
+                                    i, mixtureData.fillType)
+                            else
+                                RmLogging.logWarning("Cannot add custom ingredient %d to mixture %s: all fillTypes invalid",
+                                    i, mixtureData.fillType)
                             end
                         end
 
@@ -162,27 +224,57 @@ local function applyRecipesToGame(recipes, foodSystem)
             local gameRecipe = foodSystem:getRecipeByFillTypeIndex(fillTypeIndex)
 
             if gameRecipe then
-                -- Apply ingredient percentages and fillTypes for non-disabled ingredients
+                -- Apply configuration to ingredients (update existing + insert new)
                 for i, configIngredient in ipairs(recipeData.ingredients) do
-                    -- Skip disabled ingredients - they will be removed later
-                    if not configIngredient.disabled and gameRecipe.ingredients[i] then
+                    if not configIngredient.disabled then
                         local gameIngredient = gameRecipe.ingredients[i]
 
-                        -- Apply percentages (convert from 0-100 to 0-1)
-                        gameIngredient.minPercentage = configIngredient.minPercentage / 100
-                        gameIngredient.maxPercentage = configIngredient.maxPercentage / 100
+                        if gameIngredient then
+                            -- UPDATE existing ingredient
+                            gameIngredient.minPercentage = configIngredient.minPercentage / 100
+                            gameIngredient.maxPercentage = configIngredient.maxPercentage / 100
 
-                        -- Recalculate ratio
-                        gameIngredient.ratio = gameIngredient.maxPercentage - gameIngredient.minPercentage
+                            -- Recalculate ratio
+                            gameIngredient.ratio = gameIngredient.maxPercentage - gameIngredient.minPercentage
 
-                        -- Apply fillTypes
-                        if configIngredient.fillTypes then
-                            local context = string.format("recipe %s ingredient %d", recipeData.fillType, i)
-                            local newFillTypes = RmAafDataConverters.parseFillTypesFromString(configIngredient.fillTypes,
-                                context)
+                            if configIngredient.fillTypes then
+                                local context = string.format("recipe %s ingredient %d (%s)",
+                                    recipeData.fillType, i, configIngredient.name)
+                                local newFillTypes = RmAafDataConverters.parseFillTypesFromString(
+                                    configIngredient.fillTypes, context)
 
-                            if newFillTypes then
-                                gameIngredient.fillTypes = newFillTypes
+                                if newFillTypes then
+                                    gameIngredient.fillTypes = newFillTypes
+                                end
+                            end
+
+                            RmLogging.logDebug("Applied ingredient %d (%s) for recipe %s",
+                                i, configIngredient.name, recipeData.fillType)
+                        else
+                            -- INSERT new ingredient (custom addition)
+                            local context = string.format("recipe %s ingredient %d (%s)",
+                                recipeData.fillType, i, configIngredient.name)
+                            local fillTypeIndices = RmAafDataConverters.parseFillTypesFromString(
+                                configIngredient.fillTypes, context)
+
+                            if fillTypeIndices then
+                                local newIngredient = {
+                                    name = configIngredient.name,
+                                    title = configIngredient.title,
+                                    minPercentage = configIngredient.minPercentage / 100,
+                                    maxPercentage = configIngredient.maxPercentage / 100,
+                                    fillTypes = fillTypeIndices
+                                }
+
+                                -- Calculate ratio for new ingredient
+                                newIngredient.ratio = newIngredient.maxPercentage - newIngredient.minPercentage
+
+                                table.insert(gameRecipe.ingredients, newIngredient)
+                                RmLogging.logInfo("Added custom ingredient %d (%s) to recipe %s",
+                                    i, configIngredient.name, recipeData.fillType)
+                            else
+                                RmLogging.logWarning("Cannot add custom ingredient %d (%s) to recipe %s: all fillTypes invalid",
+                                    i, configIngredient.name, recipeData.fillType)
                             end
                         end
 
