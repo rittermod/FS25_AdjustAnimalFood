@@ -39,18 +39,18 @@ Usage:
 Documentation, source code and issue tracker at https://github.com/rittermod/FS25_AdjustAnimalFood
 
 Changelog:
-  0.10.0.0:
-  - Added custom content support: add food groups to animals, ingredients to mixtures and recipes
-  - Custom additions persist through save/reload cycles
-  - XML order preserved for food groups (affects UI display)
-  - Automatic validation and normalization of custom content
-  - Full compatibility with mod-added content
+0.10.0.0:
+- Added custom content support: add food groups to animals, ingredients to mixtures and recipes
+- Custom additions persist through save/reload cycles
+- XML order preserved for food groups (affects UI display)
+- Automatic validation and normalization of custom content
+- Full compatibility with map-added content
 
-  0.9.0.0:
-  - Added disabling feature for food groups and ingredients
-  - Generated XML files now include inline documentation and examples
-  - Disabled items are preserved in XML across save cycles
-  - Automatic weight/ratio normalization when items are disabled
+0.9.0.0:
+- Added disabling feature for food groups and ingredients
+- Generated XML files now include inline documentation and examples
+- Disabled items are preserved in XML across save cycles
+- Automatic weight/ratio normalization when items are disabled
 
 0.8.0.0:
 - Added multiplayer support
