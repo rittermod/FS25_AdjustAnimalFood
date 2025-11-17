@@ -43,18 +43,19 @@ local function mergeAnimals(xmlAnimals, gameAnimals, preserveAllXmlOnly)
                 foodGroups = {}
             }
 
-            -- Create lookup for XML food groups
-            local xmlGroupsByTitle = {}
-            for _, group in ipairs(xmlAnimal.foodGroups) do
-                xmlGroupsByTitle[group.title] = group
+            -- Create lookup for game food groups
+            local gameGroupsByTitle = {}
+            for _, group in ipairs(gameAnimal.foodGroups) do
+                gameGroupsByTitle[group.title] = group
             end
 
-            -- Merge food groups (XML values override, new game groups added)
-            for _, gameGroup in ipairs(gameAnimal.foodGroups) do
-                local xmlGroup = xmlGroupsByTitle[gameGroup.title]
+            -- Merge food groups preserving XML order
+            -- First pass: Process all XML groups in XML order
+            for _, xmlGroup in ipairs(xmlAnimal.foodGroups) do
+                local gameGroup = gameGroupsByTitle[xmlGroup.title]
 
-                if xmlGroup then
-                    -- Group exists in XML - use XML values
+                if gameGroup then
+                    -- Group exists in both XML and game - use XML values
                     table.insert(mergedAnimal.foodGroups, {
                         title = xmlGroup.title,
                         productionWeight = xmlGroup.productionWeight,
@@ -63,32 +64,39 @@ local function mergeAnimals(xmlAnimals, gameAnimals, preserveAllXmlOnly)
                         disabled = xmlGroup.disabled
                     })
                 else
-                    -- New group from game - add with game defaults
-                    table.insert(mergedAnimal.foodGroups, gameGroup)
-                    RmLogging.logDebug("New food group added: %s / %s", gameAnimal.animalType, gameGroup.title)
+                    -- XML-only group (custom addition or disabled)
+                    -- Preserve based on context: all XML-only at startup, only disabled at save
+                    if preserveAllXmlOnly or xmlGroup.disabled then
+                        table.insert(mergedAnimal.foodGroups, {
+                            title = xmlGroup.title,
+                            productionWeight = xmlGroup.productionWeight,
+                            eatWeight = xmlGroup.eatWeight,
+                            fillTypes = xmlGroup.fillTypes,
+                            disabled = xmlGroup.disabled
+                        })
+                        if xmlGroup.disabled then
+                            RmLogging.logDebug("Preserving disabled food group: %s / %s", gameAnimal.animalType, xmlGroup.title)
+                        else
+                            RmLogging.logDebug("Preserving custom food group: %s / %s", gameAnimal.animalType, xmlGroup.title)
+                        end
+                    end
                 end
             end
 
-            -- Add disabled XML-only groups (user disabled, not in game anymore)
-            for _, xmlGroup in ipairs(xmlAnimal.foodGroups) do
-                local foundInGame = false
-                for _, gameGroup in ipairs(gameAnimal.foodGroups) do
-                    if gameGroup.title == xmlGroup.title then
-                        foundInGame = true
+            -- Second pass: Add NEW game groups not in XML (from mods/updates)
+            for _, gameGroup in ipairs(gameAnimal.foodGroups) do
+                local foundInXml = false
+                for _, xmlGroup in ipairs(xmlAnimal.foodGroups) do
+                    if xmlGroup.title == gameGroup.title then
+                        foundInXml = true
                         break
                     end
                 end
 
-                -- Preserve based on context: all XML-only at startup, only disabled at save
-                if not foundInGame and (preserveAllXmlOnly or xmlGroup.disabled) then
-                    table.insert(mergedAnimal.foodGroups, {
-                        title = xmlGroup.title,
-                        productionWeight = xmlGroup.productionWeight,
-                        eatWeight = xmlGroup.eatWeight,
-                        fillTypes = xmlGroup.fillTypes,
-                        disabled = xmlGroup.disabled
-                    })
-                    RmLogging.logDebug("Preserving disabled food group: %s / %s", gameAnimal.animalType, xmlGroup.title)
+                if not foundInXml then
+                    -- New group from game - add with game defaults at end
+                    table.insert(mergedAnimal.foodGroups, gameGroup)
+                    RmLogging.logDebug("New food group added: %s / %s", gameAnimal.animalType, gameGroup.title)
                 end
             end
 
@@ -112,44 +120,47 @@ end
 local function mergeMixtures(xmlMixtures, gameMixtures, preserveAllXmlOnly)
     local merged = {}
 
-    -- Create lookup table for XML mixtures
-    local xmlMixturesByKey = {}
-    for _, mixture in ipairs(xmlMixtures) do
+    -- Create lookup table for game mixtures
+    local gameMixturesByKey = {}
+    for _, mixture in ipairs(gameMixtures) do
         local key = mixture.fillType .. "_" .. mixture.animalType
-        xmlMixturesByKey[key] = mixture
+        gameMixturesByKey[key] = mixture
     end
 
-    -- Merge each game mixture
-    for _, gameMixture in ipairs(gameMixtures) do
-        local key = gameMixture.fillType .. "_" .. gameMixture.animalType
-        local xmlMixture = xmlMixturesByKey[key]
+    -- Merge preserving XML order
+    -- First pass: Process all XML mixtures in XML order
+    for _, xmlMixture in ipairs(xmlMixtures) do
+        local key = xmlMixture.fillType .. "_" .. xmlMixture.animalType
+        local gameMixture = gameMixturesByKey[key]
 
-        if xmlMixture then
+        if gameMixture then
+            -- Mixture exists in both - use XML
             table.insert(merged, xmlMixture)
         else
-            table.insert(merged, gameMixture)
-            RmLogging.logDebug("New mixture added: %s for %s", gameMixture.fillType, gameMixture.animalType)
-        end
-    end
-
-    -- Add XML-only mixtures (for Part 2 custom additions)
-    if preserveAllXmlOnly then
-        for _, xmlMixture in ipairs(xmlMixtures) do
-            local key = xmlMixture.fillType .. "_" .. xmlMixture.animalType
-            local foundInGame = false
-            for _, gameMixture in ipairs(gameMixtures) do
-                local gameKey = gameMixture.fillType .. "_" .. gameMixture.animalType
-                if gameKey == key then
-                    foundInGame = true
-                    break
-                end
-            end
-
-            if not foundInGame then
+            -- XML-only mixture (custom addition)
+            if preserveAllXmlOnly then
                 table.insert(merged, xmlMixture)
                 RmLogging.logDebug("Preserving XML-only mixture: %s for %s",
                     xmlMixture.fillType, xmlMixture.animalType)
             end
+        end
+    end
+
+    -- Second pass: Add NEW game mixtures not in XML (from mods/updates)
+    for _, gameMixture in ipairs(gameMixtures) do
+        local key = gameMixture.fillType .. "_" .. gameMixture.animalType
+        local foundInXml = false
+        for _, xmlMixture in ipairs(xmlMixtures) do
+            local xmlKey = xmlMixture.fillType .. "_" .. xmlMixture.animalType
+            if xmlKey == key then
+                foundInXml = true
+                break
+            end
+        end
+
+        if not foundInXml then
+            table.insert(merged, gameMixture)
+            RmLogging.logDebug("New mixture added: %s for %s", gameMixture.fillType, gameMixture.animalType)
         end
     end
 
@@ -165,39 +176,42 @@ end
 local function mergeRecipes(xmlRecipes, gameRecipes, preserveAllXmlOnly)
     local merged = {}
 
-    -- Create lookup table for XML recipes
-    local xmlRecipesByFillType = {}
-    for _, recipe in ipairs(xmlRecipes) do
-        xmlRecipesByFillType[recipe.fillType] = recipe
+    -- Create lookup table for game recipes
+    local gameRecipesByFillType = {}
+    for _, recipe in ipairs(gameRecipes) do
+        gameRecipesByFillType[recipe.fillType] = recipe
     end
 
-    -- Merge each game recipe
-    for _, gameRecipe in ipairs(gameRecipes) do
-        local xmlRecipe = xmlRecipesByFillType[gameRecipe.fillType]
+    -- Merge preserving XML order
+    -- First pass: Process all XML recipes in XML order
+    for _, xmlRecipe in ipairs(xmlRecipes) do
+        local gameRecipe = gameRecipesByFillType[xmlRecipe.fillType]
 
-        if xmlRecipe then
+        if gameRecipe then
+            -- Recipe exists in both - use XML
             table.insert(merged, xmlRecipe)
         else
-            table.insert(merged, gameRecipe)
-            RmLogging.logDebug("New recipe added: %s", gameRecipe.fillType)
-        end
-    end
-
-    -- Add XML-only recipes (for Part 2 custom additions)
-    if preserveAllXmlOnly then
-        for _, xmlRecipe in ipairs(xmlRecipes) do
-            local foundInGame = false
-            for _, gameRecipe in ipairs(gameRecipes) do
-                if gameRecipe.fillType == xmlRecipe.fillType then
-                    foundInGame = true
-                    break
-                end
-            end
-
-            if not foundInGame then
+            -- XML-only recipe (custom addition)
+            if preserveAllXmlOnly then
                 table.insert(merged, xmlRecipe)
                 RmLogging.logDebug("Preserving XML-only recipe: %s", xmlRecipe.fillType)
             end
+        end
+    end
+
+    -- Second pass: Add NEW game recipes not in XML (from mods/updates)
+    for _, gameRecipe in ipairs(gameRecipes) do
+        local foundInXml = false
+        for _, xmlRecipe in ipairs(xmlRecipes) do
+            if xmlRecipe.fillType == gameRecipe.fillType then
+                foundInXml = true
+                break
+            end
+        end
+
+        if not foundInXml then
+            table.insert(merged, gameRecipe)
+            RmLogging.logDebug("New recipe added: %s", gameRecipe.fillType)
         end
     end
 

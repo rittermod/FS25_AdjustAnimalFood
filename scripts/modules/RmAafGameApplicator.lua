@@ -68,6 +68,19 @@ local function applyAnimalsToGame(animals, foodSystem)
                     end
                 end
 
+                -- Build lookup of disabled titles for insertion logic
+                local disabledTitles = {}
+                for _, cfg in ipairs(animalData.foodGroups) do
+                    if cfg.disabled then
+                        disabledTitles[cfg.title] = true
+                    end
+                end
+
+                RmLogging.logDebug("DEBUG: Animal %s - Game array before insertions:", animalData.animalType)
+                for idx, grp in ipairs(animalFood.groups) do
+                    RmLogging.logDebug("  [%d] %s (disabled=%s)", idx, grp.title, tostring(disabledTitles[grp.title] or false))
+                end
+
                 -- Second loop: INSERT custom food groups
                 for i, configGroup in ipairs(animalData.foodGroups) do
                     if not configGroup.disabled then
@@ -90,10 +103,46 @@ local function applyAnimalsToGame(animals, foodSystem)
                                     fillTypes = fillTypeIndices
                                 }
 
-                                -- Insert at XML position to preserve ordering
-                                -- If XML position > array length, append at end
-                                local insertPosition = math.min(i, #animalFood.groups + 1)
+                                -- Calculate correct insertion position by counting non-disabled items before this one in XML
+                                local activeItemsBefore = 0
+                                for j = 1, i - 1 do
+                                    if not animalData.foodGroups[j].disabled then
+                                        activeItemsBefore = activeItemsBefore + 1
+                                    end
+                                end
+
+                                RmLogging.logDebug("DEBUG: Inserting %s at XML position %d, activeItemsBefore=%d",
+                                    configGroup.title, i, activeItemsBefore)
+
+                                -- Find insertion position: after the Nth non-disabled item in game array
+                                local insertPosition = 1 -- Default: insert at beginning
+                                if activeItemsBefore > 0 then
+                                    local activeCount = 0
+                                    for pos, grp in ipairs(animalFood.groups) do
+                                        RmLogging.logDebug("DEBUG:   Checking pos=%d, title=%s, disabled=%s, activeCount=%d",
+                                            pos, grp.title, tostring(disabledTitles[grp.title] or false), activeCount)
+                                        if not disabledTitles[grp.title] then
+                                            activeCount = activeCount + 1
+                                            if activeCount == activeItemsBefore then
+                                                insertPosition = pos + 1
+                                                RmLogging.logDebug("DEBUG:   Found match! insertPosition=%d", insertPosition)
+                                                break
+                                            end
+                                        end
+                                    end
+                                    -- If we didn't find enough active items, append at end
+                                    if activeCount < activeItemsBefore then
+                                        insertPosition = #animalFood.groups + 1
+                                        RmLogging.logDebug("DEBUG:   Not enough active items, appending at end: %d", insertPosition)
+                                    end
+                                end
+
                                 table.insert(animalFood.groups, insertPosition, newGroup)
+
+                                RmLogging.logDebug("DEBUG: After insertion, game array:")
+                                for idx, grp in ipairs(animalFood.groups) do
+                                    RmLogging.logDebug("  [%d] %s", idx, grp.title)
+                                end
 
                                 applied = applied + 1
                                 RmLogging.logInfo("Added custom food group: %s / %s at position %d",
@@ -141,7 +190,7 @@ local function applyMixturesToGame(mixtures, foodSystem)
             local gameMixture = foodSystem:getMixtureByFillType(fillTypeIndex)
 
             if gameMixture then
-                -- Apply configuration to ingredients (update existing + insert new)
+                -- First loop: UPDATE existing ingredients
                 for i, configIngredient in ipairs(mixtureData.ingredients) do
                     if not configIngredient.disabled then
                         local gameIngredient = gameMixture.ingredients[i]
@@ -163,7 +212,16 @@ local function applyMixturesToGame(mixtures, foodSystem)
 
                             RmLogging.logDebug("Applied ingredient %d for mixture %s: weight=%.3f",
                                 i, mixtureData.fillType, configIngredient.weight)
-                        else
+                        end
+                    end
+                end
+
+                -- Second loop: INSERT custom ingredients at correct positions
+                for i, configIngredient in ipairs(mixtureData.ingredients) do
+                    if not configIngredient.disabled then
+                        local gameIngredient = gameMixture.ingredients[i]
+
+                        if not gameIngredient then
                             -- INSERT new ingredient (custom addition)
                             local context = string.format("mixture %s ingredient %d",
                                 mixtureData.fillType, i)
@@ -176,11 +234,24 @@ local function applyMixturesToGame(mixtures, foodSystem)
                                     fillTypes = fillTypeIndices
                                 }
 
-                                table.insert(gameMixture.ingredients, newIngredient)
-                                RmLogging.logInfo("Added custom ingredient %d to mixture %s",
-                                    i, mixtureData.fillType)
+                                -- Calculate correct insertion position by counting non-disabled items before this one in XML
+                                local activeItemsBefore = 0
+                                for j = 1, i - 1 do
+                                    if not mixtureData.ingredients[j].disabled then
+                                        activeItemsBefore = activeItemsBefore + 1
+                                    end
+                                end
+
+                                -- For mixtures, insertion is simpler: just insert at position
+                                -- (ingredients are always at end of array after updates)
+                                local insertPosition = activeItemsBefore + 1
+                                table.insert(gameMixture.ingredients, insertPosition, newIngredient)
+
+                                RmLogging.logInfo("Added custom ingredient %d to mixture %s at position %d",
+                                    i, mixtureData.fillType, insertPosition)
                             else
-                                RmLogging.logWarning("Cannot add custom ingredient %d to mixture %s: all fillTypes invalid",
+                                RmLogging.logWarning(
+                                    "Cannot add custom ingredient %d to mixture %s: all fillTypes invalid",
                                     i, mixtureData.fillType)
                             end
                         end
@@ -224,7 +295,7 @@ local function applyRecipesToGame(recipes, foodSystem)
             local gameRecipe = foodSystem:getRecipeByFillTypeIndex(fillTypeIndex)
 
             if gameRecipe then
-                -- Apply configuration to ingredients (update existing + insert new)
+                -- First loop: UPDATE existing ingredients
                 for i, configIngredient in ipairs(recipeData.ingredients) do
                     if not configIngredient.disabled then
                         local gameIngredient = gameRecipe.ingredients[i]
@@ -250,7 +321,16 @@ local function applyRecipesToGame(recipes, foodSystem)
 
                             RmLogging.logDebug("Applied ingredient %d (%s) for recipe %s",
                                 i, configIngredient.name, recipeData.fillType)
-                        else
+                        end
+                    end
+                end
+
+                -- Second loop: INSERT custom ingredients at correct positions
+                for i, configIngredient in ipairs(recipeData.ingredients) do
+                    if not configIngredient.disabled then
+                        local gameIngredient = gameRecipe.ingredients[i]
+
+                        if not gameIngredient then
                             -- INSERT new ingredient (custom addition)
                             local context = string.format("recipe %s ingredient %d (%s)",
                                 recipeData.fillType, i, configIngredient.name)
@@ -269,11 +349,24 @@ local function applyRecipesToGame(recipes, foodSystem)
                                 -- Calculate ratio for new ingredient
                                 newIngredient.ratio = newIngredient.maxPercentage - newIngredient.minPercentage
 
-                                table.insert(gameRecipe.ingredients, newIngredient)
-                                RmLogging.logInfo("Added custom ingredient %d (%s) to recipe %s",
-                                    i, configIngredient.name, recipeData.fillType)
+                                -- Calculate correct insertion position by counting non-disabled items before this one in XML
+                                local activeItemsBefore = 0
+                                for j = 1, i - 1 do
+                                    if not recipeData.ingredients[j].disabled then
+                                        activeItemsBefore = activeItemsBefore + 1
+                                    end
+                                end
+
+                                -- For recipes, insertion is simpler: just insert at position
+                                -- (ingredients are always at end of array after updates)
+                                local insertPosition = activeItemsBefore + 1
+                                table.insert(gameRecipe.ingredients, insertPosition, newIngredient)
+
+                                RmLogging.logInfo("Added custom ingredient %d (%s) to recipe %s at position %d",
+                                    i, configIngredient.name, recipeData.fillType, insertPosition)
                             else
-                                RmLogging.logWarning("Cannot add custom ingredient %d (%s) to recipe %s: all fillTypes invalid",
+                                RmLogging.logWarning(
+                                    "Cannot add custom ingredient %d (%s) to recipe %s: all fillTypes invalid",
                                     i, configIngredient.name, recipeData.fillType)
                             end
                         end
