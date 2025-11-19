@@ -240,6 +240,22 @@ SIMPLE USE CASES:
    Disabled items are removed from game but preserved in this file
    Remaining items automatically normalize their weights/percentages
 
+4. CHANGE FEEDING BEHAVIOR (consumptionType):
+   Control how animals consume multiple food types
+
+   SERIAL (default for COW, SHEEP, CHICKEN, HORSE): Animals eat one food at a time in priority order
+   - Example: Cows eat Hay until depleted, then Silage, then Grass
+   - eatWeight is IGNORED (only productionWeight affects productivity)
+
+   PARALLEL (default for PIG): Animals eat all available foods simultaneously
+   - Example: Pigs consume Base (50%) + Grain (25%) + Protein (20%) + Roots (5%)
+   - eatWeight MATTERS (determines consumption proportions)
+
+   To change: <animal animalType="COW" consumptionType="PARALLEL">
+
+   Note: When changing SERIAL→PARALLEL, configure eatWeight values appropriately.
+   Equal eatWeights = equal consumption. Unequal eatWeights = proportional consumption.
+
 See examples below for each section.
 Full documentation: https://github.com/rittermod/FS25_AdjustAnimalFood]]
     setXMLString(xmlFile, "animalFood.documentation", docText)
