@@ -132,7 +132,7 @@ function RmAdjustAnimalFood.loadAndApply()
             RmAdjustAnimalFood.configData = merged
 
             -- Save merged result
-            RmAafXmlOperations:saveToXML(merged, xmlFilePath)
+            -- RmAafXmlOperations:saveToXML(merged, xmlFilePath)
 
             -- Apply to game
             RmAafGameApplicator:applyToGame(merged)
@@ -145,7 +145,7 @@ function RmAdjustAnimalFood.loadAndApply()
         -- Store config for network sync
         RmAdjustAnimalFood.configData = gameData
 
-        RmAafXmlOperations:saveToXML(gameData, xmlFilePath)
+        -- RmAafXmlOperations:saveToXML(gameData, xmlFilePath)
     end
 
     -- Broadcast config sync to all connected clients (edge case: early joiners)
