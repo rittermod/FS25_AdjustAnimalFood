@@ -10,11 +10,11 @@ Supports multiplayer.
 
 **Beta Software:** Please back up your savegames before use. The mod is fully functional but still in beta testing.
 
-As of version 0.10.0.0
+As of version 0.11.0.0
 You can:
 - Add custom food groups to animals and custom ingredients to mixtures/recipes
 - Disable unwanted food groups or ingredients
-- Adjust food effectiveness (productionWeight, eatWeight)
+- Adjust food effectiveness and feeding behavior (productionWeight, eatWeight, consumptionType)
 - Change which crops belong to each food group (fillTypes)
 - Modify mixed feed recipes and ingredient proportions
 - Customize TMR/forage recipe compositions and ranges
