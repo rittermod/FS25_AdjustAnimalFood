@@ -31,6 +31,14 @@ local function applyAnimalsToGame(animals, foodSystem)
             local animalFood = foodSystem:getAnimalFood(animalTypeIndex)
 
             if animalFood then
+                -- Apply consumptionType if specified in config
+                if animalData.consumptionType then
+                    local consumptionTypeValue = RmAafDataConverters.getConsumptionTypeValue(animalData.consumptionType)
+                    animalFood.consumptionType = consumptionTypeValue
+                    RmLogging.logInfo("Applied consumptionType for %s: %s (%d)",
+                        animalData.animalType, animalData.consumptionType, consumptionTypeValue)
+                end
+
                 -- Create lookup for food groups by title
                 local groupsByTitle = {}
                 for _, group in ipairs(animalFood.groups) do
@@ -78,7 +86,8 @@ local function applyAnimalsToGame(animals, foodSystem)
 
                 RmLogging.logDebug("DEBUG: Animal %s - Game array before insertions:", animalData.animalType)
                 for idx, grp in ipairs(animalFood.groups) do
-                    RmLogging.logDebug("  [%d] %s (disabled=%s)", idx, grp.title, tostring(disabledTitles[grp.title] or false))
+                    RmLogging.logDebug("  [%d] %s (disabled=%s)", idx, grp.title,
+                        tostring(disabledTitles[grp.title] or false))
                 end
 
                 -- Second loop: INSERT custom food groups
@@ -119,13 +128,15 @@ local function applyAnimalsToGame(animals, foodSystem)
                                 if activeItemsBefore > 0 then
                                     local activeCount = 0
                                     for pos, grp in ipairs(animalFood.groups) do
-                                        RmLogging.logDebug("DEBUG:   Checking pos=%d, title=%s, disabled=%s, activeCount=%d",
+                                        RmLogging.logDebug(
+                                            "DEBUG:   Checking pos=%d, title=%s, disabled=%s, activeCount=%d",
                                             pos, grp.title, tostring(disabledTitles[grp.title] or false), activeCount)
                                         if not disabledTitles[grp.title] then
                                             activeCount = activeCount + 1
                                             if activeCount == activeItemsBefore then
                                                 insertPosition = pos + 1
-                                                RmLogging.logDebug("DEBUG:   Found match! insertPosition=%d", insertPosition)
+                                                RmLogging.logDebug("DEBUG:   Found match! insertPosition=%d",
+                                                    insertPosition)
                                                 break
                                             end
                                         end
@@ -133,7 +144,8 @@ local function applyAnimalsToGame(animals, foodSystem)
                                     -- If we didn't find enough active items, append at end
                                     if activeCount < activeItemsBefore then
                                         insertPosition = #animalFood.groups + 1
-                                        RmLogging.logDebug("DEBUG:   Not enough active items, appending at end: %d", insertPosition)
+                                        RmLogging.logDebug("DEBUG:   Not enough active items, appending at end: %d",
+                                            insertPosition)
                                     end
                                 end
 

@@ -38,6 +38,16 @@ function RmAafDataConverters.getConsumptionTypeName(consumptionType)
     return "SERIAL"
 end
 
+---Converts consumption type string to number
+---@param consumptionTypeName string Consumption type name ("SERIAL" or "PARALLEL")
+---@return number consumptionType Consumption type constant (1=SERIAL, 2=PARALLEL)
+function RmAafDataConverters.getConsumptionTypeValue(consumptionTypeName)
+    if consumptionTypeName == "PARALLEL" then
+        return AnimalFoodSystem.FOOD_CONSUME_TYPE_PARALLEL
+    end
+    return AnimalFoodSystem.FOOD_CONSUME_TYPE_SERIAL
+end
+
 ---Converts fill type indices array to space-separated string of names
 ---@param fillTypes table Array of fill type indices
 ---@return string fillTypeNames Space-separated fill type names

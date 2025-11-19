@@ -10,11 +10,11 @@ Supports multiplayer.
 
 **Beta Software:** Please back up your savegames before use. The mod is fully functional but still in beta testing.
 
-As of version 0.10.0.0
+As of version 0.11.0.0
 You can:
 - Add custom food groups to animals and custom ingredients to mixtures/recipes
 - Disable unwanted food groups or ingredients
-- Adjust food effectiveness (productionWeight, eatWeight)
+- Adjust food effectiveness and feeding behavior (productionWeight, eatWeight, consumptionType)
 - Change which crops belong to each food group (fillTypes)
 - Modify mixed feed recipes and ingredient proportions
 - Customize TMR/forage recipe compositions and ranges
@@ -22,7 +22,6 @@ You can:
 You **cannot**:
 - Cannot delete or add new animal types (only modify existing animals like COW, PIG, CHICKEN, SHEEP, HORSE)
 - Cannot delete or add new mixtures/recipes (only modify existing ones like PIGFOOD, FORAGE)
-- Cannot change consumption types (SERIAL vs PARALLEL)
 - Cannot change internal names or titles (these are used for matching only)
 
 
@@ -105,11 +104,11 @@ Controls food group effectiveness and crop assignments for each animal type.
 - `productionWeight`: Food effectiveness (0.0-1.0) - higher means better productivity
 - `eatWeight`: Consumption preference (0.0-1.0) - affects PARALLEL consumption animals only
 - `fillTypes`: Space-separated crop names that belong to this food group. Most animal pens will only accept bulk or bale fillTypes and not pallets. (If you want your animals to eat cake the pen must have a pallet trigger. Not tested.)
+- `consumptionType`: Set to `"SERIAL"` (eat one food at a time) or `"PARALLEL"` (eat all foods simultaneously) - changes how animals consume multiple food types
 - `disabled`: Set to `"true"` to remove this food group from the game (animals won't accept this food type)
 
 **What You Cannot Change:**
 - `animalType`: Used for matching only - can't add new animal types
-- `consumptionType`: Game-defined, modification has no effect
 - `title`: Used for matching only - must match game's food group name
 
 ### Mixtures Section
@@ -275,6 +274,34 @@ Don't want straw in your TMR? Disable the straw ingredient:
 ```
 
 Your TMR mixer will only show 3 ingredient slots instead of 4.
+
+### Change Cow Feeding from Sequential to Simultaneous
+
+By default, cows eat foods one at a time in priority order (SERIAL mode). Change to PARALLEL mode to simulate a realistic mixed ration where cows consume multiple food types simultaneously:
+
+```xml
+<animal animalType="COW" consumptionType="PARALLEL">
+    <foodGroup title="Hay" productionWeight="0.8" eatWeight="0.3" fillTypes="DRYGRASS_WINDROW"/>
+    <foodGroup title="Silage" productionWeight="1.0" eatWeight="0.5" fillTypes="SILAGE"/>
+    <foodGroup title="Grass" productionWeight="0.7" eatWeight="0.2" fillTypes="GRASS_WINDROW"/>
+</animal>
+```
+
+In PARALLEL mode, `eatWeight` controls consumption proportions (50% silage, 30% hay, 20% grass based on the weights above). In the default SERIAL mode, cows would eat one food type completely before moving to the next.
+
+### Change Pig Feeding from Simultaneous to Sequential
+
+By default, pigs eat all foods simultaneously (PARALLEL mode). Change to SERIAL mode to force pigs to eat one food type at a time in priority order:
+
+```xml
+<animal animalType="PIG" consumptionType="SERIAL">
+    <foodGroup title="Mixed Feed" productionWeight="1.0" eatWeight="1.0" fillTypes="PIGFOOD"/>
+    <foodGroup title="Grain" productionWeight="0.8" eatWeight="1.0" fillTypes="WHEAT BARLEY"/>
+    <foodGroup title="Roots" productionWeight="0.6" eatWeight="1.0" fillTypes="POTATO SUGARBEET"/>
+</animal>
+```
+
+In SERIAL mode, pigs eat Mixed Feed first, then Grain when depleted, then Roots. The `eatWeight` values are ignored in SERIAL mode - only `productionWeight` affects productivity.
 
 ### Advanced: Add Custom Food Type (Staying Within 5-Entry Limit)
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <modDesc descVersion="100">
     <author>Ritter</author>
-    <version>0.10.0.0</version>
+    <version>0.11.0.0</version>
 
     <title>
         <en>Adjust Animal Food</en>
@@ -18,7 +18,7 @@ Notice:
 Customize aspects of animal feeding without modifying map files:
 - Add custom food groups to animals and custom ingredients to mixtures/recipes
 - Disable unwanted food groups or ingredients (except Grass)
-- Adjust food effectiveness (productionWeight, eatWeight)
+- Adjust food effectiveness and feeding behavior (productionWeight, eatWeight, consumptionType)
 - Change which crops belong to each food group (fillTypes)
 - Modify mixed feed recipes and ingredient proportions
 - Customize TMR/forage recipe compositions and ranges
@@ -27,7 +27,6 @@ Limitations (what this mod CANNOT do):
 - Cannot disable the Grass food group - causes game hang. You can change its weights.
 - Cannot delete or add new animal types (only modify existing animals like COW, PIG, CHICKEN, SHEEP, HORSE)
 - Cannot delete or add new mixtures/recipes (only modify existing ones like PIGFOOD, FORAGE)
-- Cannot change consumption types (SERIAL vs PARALLEL)
 - Cannot change internal names or titles (these are used for matching only)
 
 Usage:
@@ -39,6 +38,12 @@ Usage:
 Documentation, source code and issue tracker at https://github.com/rittermod/FS25_AdjustAnimalFood
 
 Changelog:
+0.11.0.0:
+- Change animal feeding behavior between SERIAL and PARALLEL consumption modes
+- Reorganized XML documentation with brief readme and comprehensive guide at end
+- Quick-start examples for common customization tasks
+- Improved XML readability with cleaner configuration section
+
 0.10.0.0:
 - Added custom content support: add food groups to animals, ingredients to mixtures and recipes
 - Custom additions persist through save/reload cycles

@@ -46,39 +46,8 @@ function RmAafXmlOperations:loadFromXML(filePath)
         -- Register documentation element (written but ignored on load)
         schema:register(XMLValueType.STRING, "animalFood.documentation", "User documentation")
 
-        -- Register example elements for animals (written but ignored on load)
-        schema:register(XMLValueType.STRING, "animalFood.animals.animal(?).example#description", "Example description")
-        schema:register(XMLValueType.STRING, "animalFood.animals.animal(?).example.foodGroup#title",
-            "Example food group title")
-        schema:register(XMLValueType.FLOAT, "animalFood.animals.animal(?).example.foodGroup#productionWeight",
-            "Example production weight")
-        schema:register(XMLValueType.FLOAT, "animalFood.animals.animal(?).example.foodGroup#eatWeight",
-            "Example eat weight")
-        schema:register(XMLValueType.STRING, "animalFood.animals.animal(?).example.foodGroup#fillTypes",
-            "Example fill types")
-        schema:register(XMLValueType.BOOL, "animalFood.animals.animal(?).example.foodGroup#disabled",
-            "Example disabled flag")
-
-        -- Register example elements for mixtures (written but ignored on load)
-        schema:register(XMLValueType.STRING, "animalFood.mixtures.mixture(?).example#description", "Example description")
-        schema:register(XMLValueType.FLOAT, "animalFood.mixtures.mixture(?).example.ingredient#weight", "Example weight")
-        schema:register(XMLValueType.STRING, "animalFood.mixtures.mixture(?).example.ingredient#fillTypes",
-            "Example fill types")
-        schema:register(XMLValueType.BOOL, "animalFood.mixtures.mixture(?).example.ingredient#disabled",
-            "Example disabled flag")
-
-        -- Register example elements for recipes (written but ignored on load)
-        schema:register(XMLValueType.STRING, "animalFood.recipes.recipe(?).example#description", "Example description")
-        schema:register(XMLValueType.STRING, "animalFood.recipes.recipe(?).example.ingredient#name", "Example name")
-        schema:register(XMLValueType.STRING, "animalFood.recipes.recipe(?).example.ingredient#title", "Example title")
-        schema:register(XMLValueType.INT, "animalFood.recipes.recipe(?).example.ingredient#minPercentage",
-            "Example min percentage")
-        schema:register(XMLValueType.INT, "animalFood.recipes.recipe(?).example.ingredient#maxPercentage",
-            "Example max percentage")
-        schema:register(XMLValueType.STRING, "animalFood.recipes.recipe(?).example.ingredient#fillTypes",
-            "Example fill types")
-        schema:register(XMLValueType.BOOL, "animalFood.recipes.recipe(?).example.ingredient#disabled",
-            "Example disabled flag")
+        -- Register readme element (written but ignored on load)
+        schema:register(XMLValueType.STRING, "animalFood.readme", "Brief usage guide pointer")
     end
 
     local xmlFile = XMLFile.load("animalFoodAdjust", filePath, schema)
@@ -215,52 +184,15 @@ function RmAafXmlOperations:saveToXML(data, filePath)
         return false
     end
 
-    -- Write documentation element (will be ignored during load)
-    local docText = [[IMPORTANT: 5-ENTRY LIMIT
-Keep total ACTIVE (non-disabled) food groups/ingredients to 5 or fewer per animal/mixture/recipe.
-The game UI may not display or handle more than 5 correctly. If adding custom entries, consider disabling existing ones.
-
-WARNING: NEVER DISABLE GRASS!
-Do NOT disable the Grass food group - the game's Meadow system depends on it and disabling causes game hang.
-Other food groups may have hidden dependencies. Disable with caution and test thoroughly.
-Adjust weights/fillTypes instead of disabling when unsure.
-
-SIMPLE USE CASES:
-
-1. ADJUST FOOD EFFECTIVENESS (productionWeight):
-   Change productionWeight to make food more/less effective (range: 0.0 to 1.0, higher = better)
-   Example: foodGroup title="Hay" productionWeight="1.0" eatWeight="1.0" fillTypes="DRYGRASS_WINDROW"
-
-2. ADD CROPS TO FOOD GROUP (fillTypes):
-   Add space-separated crop names to existing food groups
-   Example: foodGroup title="Grain" fillTypes="WHEAT BARLEY SORGHUM OAT"
-
-3. DISABLE UNWANTED ITEMS:
-   Add disabled="true" to any food group, mixture ingredient, or recipe ingredient
-   Disabled items are removed from game but preserved in this file
-   Remaining items automatically normalize their weights/percentages
-
-See examples below for each section.
-Full documentation: https://github.com/rittermod/FS25_AdjustAnimalFood]]
-    setXMLString(xmlFile, "animalFood.documentation", docText)
+    -- Write brief readme pointer
+    local readmeText = "Configuration guide and examples available in 'documentation' section at end of this file. Full documentation: https://github.com/rittermod/FS25_AdjustAnimalFood"
+    setXMLString(xmlFile, "animalFood.readme", readmeText)
 
     -- Save animals
     for animalIndex, animal in ipairs(data.animals) do
         local animalKey = string.format("animalFood.animals.animal(%d)", animalIndex - 1)
         setXMLString(xmlFile, animalKey .. "#animalType", animal.animalType)
         setXMLString(xmlFile, animalKey .. "#consumptionType", animal.consumptionType)
-
-        -- Add example for first animal showing weight adjustment and fillTypes modification
-        if animalIndex == 1 then
-            local exampleKey = animalKey .. ".example"
-            setXMLString(xmlFile, exampleKey .. "#description",
-                "EXAMPLES: (1) Adjust productionWeight to change effectiveness (0.0-1.0, higher=better). (2) Add crops to fillTypes space-separated. (3) Add disabled=\"true\" to disable.")
-            setXMLString(xmlFile, exampleKey .. ".foodGroup#title", "ExampleFoodGroup")
-            setXMLFloat(xmlFile, exampleKey .. ".foodGroup#productionWeight", 0.9)
-            setXMLFloat(xmlFile, exampleKey .. ".foodGroup#eatWeight", 1.0)
-            setXMLString(xmlFile, exampleKey .. ".foodGroup#fillTypes", "EXAMPLE_FILLTYPE1 EXAMPLE_FILLTYPE2")
-            setXMLBool(xmlFile, exampleKey .. ".foodGroup#disabled", true)
-        end
 
         for groupIndex, foodGroup in ipairs(animal.foodGroups) do
             local groupKey = string.format("%s.foodGroup(%d)", animalKey, groupIndex - 1)
@@ -284,16 +216,6 @@ Full documentation: https://github.com/rittermod/FS25_AdjustAnimalFood]]
         setXMLString(xmlFile, mixtureKey .. "#fillType", mixture.fillType)
         setXMLString(xmlFile, mixtureKey .. "#animalType", mixture.animalType)
 
-        -- Add example for first mixture showing weight adjustment and fillTypes modification
-        if mixtureIndex == 1 then
-            local exampleKey = mixtureKey .. ".example"
-            setXMLString(xmlFile, exampleKey .. "#description",
-                "EXAMPLES: (1) Adjust weight to change proportions (auto-normalized to 100%). (2) Add crops to fillTypes space-separated. (3) Add disabled=\"true\" to disable.")
-            setXMLFloat(xmlFile, exampleKey .. ".ingredient#weight", 0.3)
-            setXMLString(xmlFile, exampleKey .. ".ingredient#fillTypes", "EXAMPLE_FILLTYPE1 EXAMPLE_FILLTYPE2")
-            setXMLBool(xmlFile, exampleKey .. ".ingredient#disabled", true)
-        end
-
         for ingredientIndex, ingredient in ipairs(mixture.ingredients) do
             local ingredientKey = string.format("%s.ingredient(%d)", mixtureKey, ingredientIndex - 1)
             setXMLFloat(xmlFile, ingredientKey .. "#weight", ingredient.weight)
@@ -313,19 +235,6 @@ Full documentation: https://github.com/rittermod/FS25_AdjustAnimalFood]]
         local recipeKey = string.format("animalFood.recipes.recipe(%d)", recipeIndex - 1)
         setXMLString(xmlFile, recipeKey .. "#fillType", recipe.fillType)
 
-        -- Add example for first recipe showing percentage adjustment and fillTypes modification
-        if recipeIndex == 1 then
-            local exampleKey = recipeKey .. ".example"
-            setXMLString(xmlFile, exampleKey .. "#description",
-                "EXAMPLES: (1) Adjust min/maxPercentage to change recipe flexibility (0-100, auto-normalized). (2) Add crops to fillTypes space-separated. (3) Add disabled=\"true\" to disable.")
-            setXMLString(xmlFile, exampleKey .. ".ingredient#name", "exampleIngredient")
-            setXMLString(xmlFile, exampleKey .. ".ingredient#title", "Example Ingredient")
-            setXMLInt(xmlFile, exampleKey .. ".ingredient#minPercentage", 10)
-            setXMLInt(xmlFile, exampleKey .. ".ingredient#maxPercentage", 50)
-            setXMLString(xmlFile, exampleKey .. ".ingredient#fillTypes", "EXAMPLE_FILLTYPE1 EXAMPLE_FILLTYPE2")
-            setXMLBool(xmlFile, exampleKey .. ".ingredient#disabled", true)
-        end
-
         for ingredientIndex, ingredient in ipairs(recipe.ingredients) do
             local ingredientKey = string.format("%s.ingredient(%d)", recipeKey, ingredientIndex - 1)
             setXMLString(xmlFile, ingredientKey .. "#name", ingredient.name)
@@ -342,6 +251,243 @@ Full documentation: https://github.com/rittermod/FS25_AdjustAnimalFood]]
 
         RmLogging.logDebug("Saved recipe %s with %d ingredients", recipe.fillType, #recipe.ingredients)
     end
+
+    -- Write comprehensive documentation at end of file
+    local docText = [[
+
+========================================
+ADJUST ANIMAL FOOD - Configuration Guide
+========================================
+
+⚠️ CRITICAL WARNINGS
+--------------------
+• 5-ENTRY LIMIT: Keep total ACTIVE (non-disabled) items to 5 or fewer per animal/mixture/recipe.
+  The game UI may not display or handle more than 5 correctly. If adding custom entries, disable existing ones first.
+
+• NEVER DISABLE GRASS: Do NOT disable the Grass food group. The game's Meadow system depends on it
+  and disabling will cause game hang. Other food groups may have hidden dependencies - disable with caution.
+
+• BACKUP FIRST: Always back up your savegame before making major changes.
+
+
+QUICK START
+-----------
+Common tasks with minimal examples:
+
+1. ADJUST FOOD EFFECTIVENESS
+   Change productionWeight (0.0-1.0, higher = better productivity):
+
+    foodGroup title="Hay" productionWeight="1.0" eatWeight="1.0" fillTypes="DRYGRASS_WINDROW"
+
+2. ADD CROPS TO FOOD GROUP
+   Add space-separated crop names to fillTypes:
+
+    foodGroup title="Grain" fillTypes="WHEAT BARLEY SORGHUM OAT"
+
+3. DISABLE UNWANTED ITEMS
+   Add disabled="true" to remove from game (preserved in file):
+
+    foodGroup title="Straw" productionWeight="0.2" eatWeight="1.0" fillTypes="STRAW" disabled="true"
+
+4. CHANGE FEEDING BEHAVIOR
+   Modify consumptionType (SERIAL = sequential, PARALLEL = simultaneous):
+
+    animal animalType="COW" consumptionType="PARALLEL"
+
+
+ANIMALS SECTION REFERENCE
+--------------------------
+Attributes you can modify:
+
+• productionWeight (0.0-1.0): Food effectiveness for productivity. Higher = better.
+• eatWeight (0.0-1.0): Consumption proportion (PARALLEL mode only, ignored in SERIAL).
+• consumptionType ("SERIAL" or "PARALLEL"): How animals consume multiple foods.
+  - SERIAL: Eat one food completely before moving to next (default: COW, SHEEP, CHICKEN, HORSE)
+           eatWeight is IGNORED, only productionWeight affects productivity
+  - PARALLEL: Eat all foods simultaneously based on eatWeight (default: PIG)
+             eatWeight determines consumption proportions
+• fillTypes: Space-separated crop names (e.g., "WHEAT BARLEY OAT").
+• disabled ("true"): Remove this food group from game (cannot disable Grass!).
+
+Attributes you CANNOT modify:
+• animalType: Used for matching only
+• title: Used for matching only
+
+
+MIXTURES SECTION REFERENCE
+---------------------------
+Controls mixed feed recipes like PIGFOOD.
+
+Attributes you can modify:
+
+• weight: Ingredient proportion (any positive number, auto-normalized to 1.0).
+          Example: weights 50, 25, 20, 5 become 0.5, 0.25, 0.2, 0.05
+• fillTypes: Space-separated crop names for this ingredient slot.
+• disabled ("true" on ingredient): Remove this ingredient from mixture.
+
+Notes:
+- Weights are automatically normalized to sum to 100%
+- When you disable an ingredient, remaining ingredients are auto-normalized
+- Ingredient order must match game's order
+- You cannot disable entire mixtures, only individual ingredients
+
+
+RECIPES SECTION REFERENCE
+--------------------------
+Controls TMR/Forage recipes for mixing wagons.
+
+Attributes you can modify:
+
+• minPercentage (0-100): Minimum percentage for this ingredient in TMR mixer UI.
+• maxPercentage (0-100): Maximum percentage for this ingredient in TMR mixer UI.
+• fillTypes: Space-separated crop names for this ingredient.
+• disabled ("true" on ingredient): Remove this ingredient from recipe completely.
+
+Attributes you CANNOT modify:
+• name: Internal identifier
+• title: Display name
+
+Notes:
+- Percentages define valid range in TMR mixer UI
+- Ratios are automatically normalized based on your min/max ranges
+- When you disable an ingredient, it's removed from TMR mixer UI
+- You cannot disable entire recipes, only individual ingredients
+
+
+PRACTICAL EXAMPLES
+-------------------
+Copy-paste ready examples for common tasks:
+
+
+EXAMPLE: Make Hay More Effective for Cows
+------------------------------------------
+Increase productionWeight from 0.8 to 1.0:
+
+    foodGroup title="Hay" productionWeight="1.0" eatWeight="1.0" fillTypes="DRYGRASS_WINDROW"
+
+Result: Hay is now fully effective (100%) for cow productivity.
+
+
+EXAMPLE: Add Oat to Chicken Feed
+---------------------------------
+Find the Grain food group for CHICKEN and add OAT:
+
+    foodGroup title="Grain" productionWeight="1.0" eatWeight="1.0" fillTypes="WHEAT BARLEY SORGHUM OAT"
+
+Result: Chickens can now eat oat along with other grains.
+
+
+EXAMPLE: Disable Hay for Cows
+------------------------------
+Add disabled="true" to the Hay food group:
+
+    foodGroup title="Hay" productionWeight="0.8" eatWeight="1.0" fillTypes="DRYGRASS_WINDROW" disabled="true"
+
+Result: Cows no longer accept hay. Food group removed from game but stays in XML.
+
+
+EXAMPLE: Change COW to Parallel Feeding (Mixed Ration)
+-------------------------------------------------------
+Simulate realistic mixed ration where cows eat all foods simultaneously:
+
+    animal animalType="COW" consumptionType="PARALLEL"
+        foodGroup title="Hay" productionWeight="0.8" eatWeight="0.3" fillTypes="DRYGRASS_WINDROW"
+        foodGroup title="Silage" productionWeight="1.0" eatWeight="0.5" fillTypes="SILAGE"
+        foodGroup title="Grass" productionWeight="0.7" eatWeight="0.2" fillTypes="GRASS_WINDROW"
+
+Result: Cows consume 50% silage, 30% hay, 20% grass simultaneously (based on eatWeight).
+In PARALLEL mode, eatWeight controls consumption proportions.
+
+
+EXAMPLE: Change PIG to Serial Feeding (One at a Time)
+------------------------------------------------------
+Force pigs to eat one food completely before moving to next:
+
+    animal animalType="PIG" consumptionType="SERIAL"
+        foodGroup title="Mixed Feed" productionWeight="1.0" eatWeight="1.0" fillTypes="PIGFOOD"
+        foodGroup title="Grain" productionWeight="0.8" eatWeight="1.0" fillTypes="WHEAT BARLEY"
+        foodGroup title="Roots" productionWeight="0.6" eatWeight="1.0" fillTypes="POTATO SUGARBEET"
+
+Result: Pigs eat Mixed Feed first, then Grain when depleted, then Roots.
+In SERIAL mode, eatWeight values are ignored.
+
+
+EXAMPLE: Adjust Pig Feed Mixture Proportions
+---------------------------------------------
+Change PIGFOOD to use more grain, less roots:
+
+    mixture fillType="PIGFOOD" animalType="PIG"
+        ingredient weight="0.60" fillTypes="MAIZE TRITICALE"
+        ingredient weight="0.30" fillTypes="SOYBEAN CANOLA"
+        ingredient weight="0.10" fillTypes="POTATO"
+
+Result: New proportions are 60% base, 30% protein, 10% roots (auto-normalized).
+
+
+EXAMPLE: Allow More Silage in TMR
+----------------------------------
+Increase maximum silage percentage from 75% to 85%:
+
+    ingredient name="silage" title="Silage" minPercentage="0" maxPercentage="85" fillTypes="SILAGE"
+
+Result: TMR mixer now accepts up to 85% silage instead of default 75%.
+
+
+EXAMPLE: Remove Grain from Pig Feed Mix
+----------------------------------------
+Disable the grain ingredient in PIGFOOD mixture:
+
+    mixture fillType="PIGFOOD" animalType="PIG"
+        ingredient weight="0.50" fillTypes="MAIZE TRITICALE"
+        ingredient weight="0.25" fillTypes="WHEAT BARLEY" disabled="true"
+        ingredient weight="0.20" fillTypes="SOYBEAN CANOLA"
+        ingredient weight="0.05" fillTypes="POTATO SUGARBEET_CUT"
+
+Result: Grain excluded. Remaining ingredients auto-adjust: Base 66.6%, Protein 26.6%, Roots 6.6%.
+
+
+EXAMPLE: Add Custom Food Group (Respecting 5-Entry Limit)
+----------------------------------------------------------
+COW has 4 vanilla food groups, so you can add 1 custom (total = 5):
+
+    animal animalType="COW" consumptionType="SERIAL"
+        foodGroup title="Total Mixed Ration" productionWeight="1.0" eatWeight="1.0" fillTypes="FORAGE"
+        foodGroup title="Hay" productionWeight="0.8" eatWeight="1.0" fillTypes="DRYGRASS_WINDROW"
+        foodGroup title="Silage" productionWeight="0.8" eatWeight="1.0" fillTypes="SILAGE"
+        foodGroup title="Grass" productionWeight="0.4" eatWeight="1.0" fillTypes="GRASS_WINDROW"
+        foodGroup title="Oat" productionWeight="1.0" eatWeight="1.0" fillTypes="OAT"
+
+Result: Added custom Oat food group. Total active entries = 5 (within limit).
+
+WARNING: Don't exceed 5 active entries or game UI may malfunction!
+
+
+TROUBLESHOOTING
+---------------
+Changes don't take effect:
+• Save XML file after editing
+• Verify file is in correct savegame folder
+• Check game log for warnings about unknown fillTypes
+
+Unknown fillType warnings:
+• Check spelling of crop names (case-sensitive)
+• Crop may not exist in your game/mods
+• Remove invalid fillType names from config
+
+Game crashes or hangs:
+• Did you disable Grass? Re-enable it immediately!
+• Too many active entries (>5)? Disable some items
+• Restore backup if problems persist
+
+Reset to defaults:
+• Delete aaf_AnimalFood.xml from savegame folder
+• Load savegame to regenerate fresh default file
+
+
+Full documentation: https://github.com/rittermod/FS25_AdjustAnimalFood
+Generated by FS25_AdjustAnimalFood mod
+]]
+    setXMLString(xmlFile, "animalFood.documentation", docText)
 
     saveXMLFile(xmlFile)
     delete(xmlFile)
