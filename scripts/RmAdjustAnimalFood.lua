@@ -42,6 +42,26 @@ RmAdjustAnimalFood.modName = g_currentModName
 RmAdjustAnimalFood.XML_FILENAME = "aaf_AnimalFood.xml"
 RmAdjustAnimalFood.configData = nil -- Stores merged config for network sync
 
+-- ============================================================================
+-- CONSUMPTION MULTIPLIER: Configuration and state
+-- ============================================================================
+
+-- Mods that also modify consumption behavior - feature disabled when detected
+-- Add mod folder names here to disable consumption multiplier when they're active
+local INCOMPATIBLE_MODS = {
+    "FS25_RealisticLivestock",
+    "FS25_EnhancedAnimalSystem",
+}
+
+-- Consumption multiplier state
+RmAdjustAnimalFood.consumptionMultiplier = 1.0
+RmAdjustAnimalFood.consumptionMultiplierEnabled = false
+RmAdjustAnimalFood.consumptionMultiplierHookApplied = false
+
+-- Multiplier bounds
+local MULTIPLIER_MIN = 0.01
+local MULTIPLIER_MAX = 100
+
 -- Configure logging
 RmLogging.setLogPrefix("[RmAdjustAnimalFood]")
 -- RmLogging.setLogLevel(RmLogging.LOG_LEVEL.DEBUG) -- Change to INFO or WARNING for less verbosity
@@ -86,6 +106,102 @@ local function setLoggingContext()
         tostring(g_currentMission:getIsServer()),
         tostring(g_currentMission.isMasterUser)
     )
+end
+
+-- ============================================================================
+-- CONSUMPTION MULTIPLIER: Hook implementation
+-- ============================================================================
+
+---Checks if any incompatible mods are active
+---@return boolean compatible True if no incompatible mods detected
+---@return string|nil incompatibleMod Name of first incompatible mod found, or nil
+local function checkModCompatibility()
+    for _, modName in ipairs(INCOMPATIBLE_MODS) do
+        if g_modIsLoaded[modName] then
+            return false, modName
+        end
+    end
+    return true, nil
+end
+
+---Applies consumption multiplier to animal food consumption calculation
+---This function replaces the vanilla onHusbandryAnimalsUpdate calculation
+---@param self table PlaceableHusbandryFood instance
+---@param superFunc function Original function (not called - we replace entirely)
+---@param clusters table Animal clusters in the husbandry
+local function applyConsumptionMultiplier(self, superFunc, clusters)
+    local spec = self.spec_husbandryFood
+    local multiplier = RmAdjustAnimalFood.consumptionMultiplier
+
+    -- Replicate vanilla calculation with multiplier applied
+    spec.litersPerHour = 0
+    for _, cluster in ipairs(clusters) do
+        local subType = g_currentMission.animalSystem:getSubTypeByIndex(cluster.subTypeIndex)
+        if subType ~= nil then
+            local food = subType.input.food
+            if food ~= nil then
+                local age = cluster:getAge()
+                local litersPerAnimal = food:get(age)
+                local litersPerDay = litersPerAnimal * cluster:getNumAnimals()
+
+                -- Apply multiplier to consumption rate
+                spec.litersPerHour = spec.litersPerHour + ((litersPerDay / 24) * multiplier)
+            end
+        end
+    end
+end
+
+---Applies the consumption multiplier hook if conditions are met
+---Conditions: server context, feature enabled, no incompatible mods
+local function applyConsumptionMultiplierHook()
+    -- Only apply on server (consumption calculation is server-side)
+    if g_server == nil then
+        RmLogging.logDebug("Consumption multiplier: Skipping hook (client context)")
+        return
+    end
+
+    -- Check if already applied
+    if RmAdjustAnimalFood.consumptionMultiplierHookApplied then
+        RmLogging.logDebug("Consumption multiplier: Hook already applied")
+        return
+    end
+
+    -- Check if feature is enabled
+    if not RmAdjustAnimalFood.consumptionMultiplierEnabled then
+        RmLogging.logDebug("Consumption multiplier: Feature disabled in config")
+        return
+    end
+
+    -- Check for incompatible mods
+    local compatible, incompatibleMod = checkModCompatibility()
+    if not compatible then
+        RmLogging.logWarning(
+            "Consumption multiplier disabled: Incompatible mod detected (%s). " ..
+            "This mod also modifies animal food consumption. " ..
+            "Other features of AdjustAnimalFood remain active.",
+            incompatibleMod
+        )
+        return
+    end
+
+    -- Check if multiplier is effectively 1.0 (no change needed)
+    if math.abs(RmAdjustAnimalFood.consumptionMultiplier - 1.0) < 0.001 then
+        RmLogging.logDebug("Consumption multiplier: Value is 1.0, no hook needed")
+        return
+    end
+
+    -- Apply the hook
+    if PlaceableHusbandryFood and PlaceableHusbandryFood.onHusbandryAnimalsUpdate then
+        PlaceableHusbandryFood.onHusbandryAnimalsUpdate = Utils.overwrittenFunction(
+            PlaceableHusbandryFood.onHusbandryAnimalsUpdate,
+            applyConsumptionMultiplier
+        )
+        RmAdjustAnimalFood.consumptionMultiplierHookApplied = true
+        RmLogging.logInfo("Consumption multiplier hook applied (%.2fx)", RmAdjustAnimalFood.consumptionMultiplier)
+    else
+        RmLogging.logError(
+            "Failed to apply consumption multiplier: PlaceableHusbandryFood.onHusbandryAnimalsUpdate not found")
+    end
 end
 
 -- ============================================================================
@@ -136,17 +252,33 @@ function RmAdjustAnimalFood.loadAndApply()
 
             -- Apply to game
             RmAafGameApplicator:applyToGame(merged)
+
+            -- Set up consumption multiplier from config
+            if merged.consumptionMultiplier then
+                local cm = merged.consumptionMultiplier
+                RmAdjustAnimalFood.consumptionMultiplierEnabled = not cm.disabled
+                RmAdjustAnimalFood.consumptionMultiplier = cm.multiplier or 1.0
+            end
         end
     else
         RmLogging.logDebug("No configuration file found, creating default")
 
         local gameData = RmAafGameDataReader:readGameData()
 
+        -- Add default consumption multiplier config (disabled by default)
+        gameData.consumptionMultiplier = {
+            multiplier = 1.0,
+            disabled = true
+        }
+
         -- Store config for network sync
         RmAdjustAnimalFood.configData = gameData
 
         -- RmAafXmlOperations:saveToXML(gameData, xmlFilePath)
     end
+
+    -- Apply consumption multiplier hook if enabled (server only)
+    applyConsumptionMultiplierHook()
 
     -- Broadcast config sync to all connected clients (edge case: early joiners)
     -- Most clients join after this, handled by FSBaseMission.sendInitialClientState

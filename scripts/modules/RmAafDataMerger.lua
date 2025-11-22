@@ -243,6 +243,24 @@ function RmAafDataMerger:mergeData(xmlData, gameData, preserveAllXmlOnly)
     merged.mixtures = mergeMixtures(xmlData.mixtures, gameData.mixtures, preserveAllXmlOnly)
     merged.recipes = mergeRecipes(xmlData.recipes, gameData.recipes, preserveAllXmlOnly)
 
+    -- Merge consumption multiplier settings (XML takes precedence, or use defaults)
+    if xmlData.consumptionMultiplier then
+        merged.consumptionMultiplier = {
+            multiplier = xmlData.consumptionMultiplier.multiplier or 1.0,
+            disabled = xmlData.consumptionMultiplier.disabled
+        }
+        -- Handle nil disabled (treat as true/disabled by default)
+        if merged.consumptionMultiplier.disabled == nil then
+            merged.consumptionMultiplier.disabled = true
+        end
+    else
+        -- No consumption multiplier in XML - use defaults (disabled)
+        merged.consumptionMultiplier = {
+            multiplier = 1.0,
+            disabled = true
+        }
+    end
+
     RmLogging.logInfo("Merged to %d animals, %d mixtures, %d recipes",
         #merged.animals, #merged.mixtures, #merged.recipes)
 

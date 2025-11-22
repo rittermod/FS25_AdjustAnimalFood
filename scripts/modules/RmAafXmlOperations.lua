@@ -48,6 +48,12 @@ function RmAafXmlOperations:loadFromXML(filePath)
 
         -- Register readme element (written but ignored on load)
         schema:register(XMLValueType.STRING, "animalFood.readme", "Brief usage guide pointer")
+
+        -- Register consumption multiplier section
+        schema:register(XMLValueType.FLOAT, "animalFood.consumptionMultiplier.global#multiplier",
+            "Food consumption rate multiplier (0.01-100)")
+        schema:register(XMLValueType.BOOL, "animalFood.consumptionMultiplier.global#disabled",
+            "Disable the consumption multiplier feature")
     end
 
     local xmlFile = XMLFile.load("animalFoodAdjust", filePath, schema)
@@ -159,6 +165,46 @@ function RmAafXmlOperations:loadFromXML(filePath)
         end
     end)
 
+    -- Load consumption multiplier settings
+    local cmMultiplier = xmlFile:getValue("animalFood.consumptionMultiplier.global#multiplier")
+    local cmDisabled = xmlFile:getValue("animalFood.consumptionMultiplier.global#disabled")
+
+    -- Check if multiplier attribute exists but failed to parse (e.g., "abc" returns nil for FLOAT)
+    local hasMultiplierAttr = xmlFile:hasProperty("animalFood.consumptionMultiplier.global#multiplier")
+    if hasMultiplierAttr and cmMultiplier == nil then
+        RmLogging.logWarning("Consumption multiplier has invalid value (not a number), using default 1.0")
+    end
+
+    -- Only set if section exists in XML (allows defaults for old saves)
+    if cmMultiplier ~= nil or cmDisabled ~= nil or hasMultiplierAttr then
+        data.consumptionMultiplier = {
+            multiplier = 1.0,
+            disabled = true
+        }
+
+        -- Validate and apply multiplier with bounds checking
+        if cmMultiplier ~= nil then
+            if cmMultiplier < 0.01 then
+                RmLogging.logWarning("Consumption multiplier %.4f below minimum (0.01), clamping", cmMultiplier)
+                data.consumptionMultiplier.multiplier = 0.01
+            elseif cmMultiplier > 100 then
+                RmLogging.logWarning("Consumption multiplier %.2f above maximum (100), clamping", cmMultiplier)
+                data.consumptionMultiplier.multiplier = 100
+            else
+                data.consumptionMultiplier.multiplier = cmMultiplier
+            end
+        end
+
+        -- Apply disabled state
+        if cmDisabled ~= nil then
+            data.consumptionMultiplier.disabled = cmDisabled
+        end
+
+        RmLogging.logDebug("Loaded consumption multiplier: %.2fx, disabled=%s",
+            data.consumptionMultiplier.multiplier,
+            tostring(data.consumptionMultiplier.disabled))
+    end
+
     xmlFile:delete()
 
     RmLogging.logInfo("Loaded %d animals, %d mixtures, %d recipes from XML",
@@ -185,7 +231,8 @@ function RmAafXmlOperations:saveToXML(data, filePath)
     end
 
     -- Write brief readme pointer
-    local readmeText = "Configuration guide and examples available in 'documentation' section at end of this file. Full documentation: https://github.com/rittermod/FS25_AdjustAnimalFood"
+    local readmeText =
+    "Configuration guide and examples available in 'documentation' section at end of this file. Full documentation: https://github.com/rittermod/FS25_AdjustAnimalFood"
     setXMLString(xmlFile, "animalFood.readme", readmeText)
 
     -- Save animals
@@ -250,6 +297,20 @@ function RmAafXmlOperations:saveToXML(data, filePath)
         end
 
         RmLogging.logDebug("Saved recipe %s with %d ingredients", recipe.fillType, #recipe.ingredients)
+    end
+
+    -- Save consumption multiplier settings
+    if data.consumptionMultiplier then
+        local cm = data.consumptionMultiplier
+        setXMLFloat(xmlFile, "animalFood.consumptionMultiplier.global#multiplier", cm.multiplier or 1.0)
+        setXMLBool(xmlFile, "animalFood.consumptionMultiplier.global#disabled", cm.disabled ~= false)
+        RmLogging.logDebug("Saved consumption multiplier: %.2fx, disabled=%s",
+            cm.multiplier or 1.0, tostring(cm.disabled ~= false))
+    else
+        -- Write defaults for new saves
+        setXMLFloat(xmlFile, "animalFood.consumptionMultiplier.global#multiplier", 1.0)
+        setXMLBool(xmlFile, "animalFood.consumptionMultiplier.global#disabled", true)
+        RmLogging.logDebug("Saved consumption multiplier defaults: 1.0x, disabled=true")
     end
 
     -- Write comprehensive documentation at end of file
@@ -352,6 +413,28 @@ Notes:
 - Ratios are automatically normalized based on your min/max ranges
 - When you disable an ingredient, it's removed from TMR mixer UI
 - You cannot disable entire recipes, only individual ingredients
+
+
+CONSUMPTION MULTIPLIER SECTION REFERENCE
+-----------------------------------------
+Controls how fast animals consume their food supply.
+
+Attributes:
+• multiplier (0.01-100): Food consumption speed
+  - 0.5 = Animals eat half as fast (food lasts longer)
+  - 1.0 = Normal speed (default)
+  - 2.0 = Animals eat twice as fast (food depletes faster)
+  - 10.0 = Extreme fast-forward for testing
+
+• disabled ("true" or "false"): Enable/disable this feature
+  - true = Feature disabled, vanilla consumption (default)
+  - false = Feature enabled, multiplier applied
+
+Notes:
+- This feature is DISABLED by default (opt-in)
+- Only affects consumption RATE, not food effectiveness (use productionWeight for that)
+- Automatically disabled if known incompatible mods detected (FS25_RealisticLivestock, etc.)
+- Server-authoritative: multiplier is applied on server, clients see results
 
 
 PRACTICAL EXAMPLES
@@ -462,6 +545,37 @@ Result: Added custom Oat food group. Total active entries = 5 (within limit).
 WARNING: Don't exceed 5 active entries or game UI may malfunction!
 
 
+EXAMPLE: Enable 2x Food Consumption (Realism/Fast-Forward)
+-----------------------------------------------------------
+Edit the consumptionMultiplier section to speed up food consumption:
+
+    consumptionMultiplier
+        global multiplier="2.0" disabled="false"
+
+Result: Animals consume food twice as fast. Useful for testing animal systems
+or speeding up gameplay.
+
+
+EXAMPLE: Slow Down Food Consumption (Easy Mode)
+--------------------------------------------------------
+Reduce consumption rate to make food last longer:
+
+    consumptionMultiplier
+        global multiplier="0.5" disabled="false"
+
+Result: Animals eat half as fast. Food supplies last twice as long.
+
+
+EXAMPLE: Extreme Fast-Forward for Testing
+------------------------------------------
+Use high multiplier for rapid testing:
+
+    consumptionMultiplier
+        global multiplier="10.0" disabled="false"
+
+Result: Animals consume food 10x faster. Only for testing, not normal gameplay!
+
+
 TROUBLESHOOTING
 ---------------
 Changes don't take effect:
@@ -482,6 +596,12 @@ Game crashes or hangs:
 Reset to defaults:
 • Delete aaf_AnimalFood.xml from savegame folder
 • Load savegame to regenerate fresh default file
+
+Consumption multiplier not working:
+• Check disabled="false" is set (feature is disabled by default)
+• Check game log for "Incompatible mod detected" warning
+• Verify multiplier value is between 0.01 and 100
+• Check you're running the server (multiplier only applies server-side)
 
 
 Full documentation: https://github.com/rittermod/FS25_AdjustAnimalFood
