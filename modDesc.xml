@@ -11,6 +11,8 @@
         <en><![CDATA[Why shouldn't chickens eat oats if you want them to? Or grass have 100% effectiveness for cows? 
 This mod gives you control over food effectiveness, crop assignments, mixed feed recipes, and TMR compositions.
 
+You can also change how fast animals consume food with a configurable multiplier (0.01x to 100x), and if they eat all food groups in parallel or not.
+
 Notice: 
 - This mod is in beta. Please back up your savegames before use.
 - Customizations are done by editing an XML file generated in your savegame folder. No in-game UI is provided.
@@ -22,6 +24,7 @@ Customize aspects of animal feeding without modifying map files:
 - Change which crops belong to each food group (fillTypes)
 - Modify mixed feed recipes and ingredient proportions
 - Customize TMR/forage recipe compositions and ranges
+- Control whether animals eat all food groups in parallel or not
 - Control animal food consumption speed with a multiplier (0.01x to 100x)
 
 Limitations (what this mod CANNOT do):

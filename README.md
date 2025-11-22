@@ -2,6 +2,8 @@
 
 Adjust Animal Food allows you to customize the animal feeding system in Farming Simulator 2025 through an XML configuration file. Why shouldn't chickens eat oats if you want them to? Or make grass more effective for cows? This mod gives you control over food effectiveness, crop assignments, mixed feed recipes, TMR compositions, and serial or parallel consumption.
 
+You can also change how fast animals consume food with a configurable multiplier (0.01x to 100x), and if they eat all food groups in parallel or not.
+
 Supports multiplayer.
 
 ## Notes
@@ -18,6 +20,7 @@ You can:
 - Change which crops belong to each food group (fillTypes)
 - Modify mixed feed recipes and ingredient proportions
 - Customize TMR/forage recipe compositions and ranges
+- Control whether animals eat all food groups in parallel or not
 - Control animal food consumption speed with a multiplier
 
 You **cannot**:
@@ -36,6 +39,7 @@ Documentation, source code and issue tracker at https://github.com/rittermod/FS2
 - **Custom Crop Assignments**: Add or remove crops from any food group (e.g., add oat to chicken feed, allow cows to eat alfalfa silage)
 - **Mixed Feed Customization**: Adjust ingredient proportions and crop types for mixed feeds like pig food
 - **Recipe Control**: Customize recipes with precise min/max percentage ranges for each ingredient
+- **Serial & Parallel Consumption**: Choose whether animals eat food groups one at a time (SERIAL) or all at once (PARALLEL)
 - **Consumption Speed Control**: Adjust how fast animals consume food with a configurable multiplier (0.01x to 100x)
 - **Automatic Normalization**: Remaining ingredients automatically adjust when you disable or modify items
 - **Schema-Validated Configuration**: Uses the game's built-in AnimalFoodSystem schema for robust, error-checked XML handling
