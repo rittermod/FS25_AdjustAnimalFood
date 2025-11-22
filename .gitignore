@@ -2,6 +2,7 @@
 .serena/
 CLAUDE.md
 claudedocs/
+PROJECT_INDEX.*
 .vscode/
 build/
 dist/
