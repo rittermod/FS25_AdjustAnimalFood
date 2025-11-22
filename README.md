@@ -18,6 +18,7 @@ You can:
 - Change which crops belong to each food group (fillTypes)
 - Modify mixed feed recipes and ingredient proportions
 - Customize TMR/forage recipe compositions and ranges
+- Control animal food consumption speed with a multiplier
 
 You **cannot**:
 - Cannot delete or add new animal types (only modify existing animals like COW, PIG, CHICKEN, SHEEP, HORSE)
@@ -35,6 +36,7 @@ Documentation, source code and issue tracker at https://github.com/rittermod/FS2
 - **Custom Crop Assignments**: Add or remove crops from any food group (e.g., add oat to chicken feed, allow cows to eat alfalfa silage)
 - **Mixed Feed Customization**: Adjust ingredient proportions and crop types for mixed feeds like pig food
 - **Recipe Control**: Customize recipes with precise min/max percentage ranges for each ingredient
+- **Consumption Speed Control**: Adjust how fast animals consume food with a configurable multiplier (0.01x to 100x)
 - **Automatic Normalization**: Remaining ingredients automatically adjust when you disable or modify items
 - **Schema-Validated Configuration**: Uses the game's built-in AnimalFoodSystem schema for robust, error-checked XML handling
 - **Intelligent Merging**: Your XML overrides customizations while automatically adding new content from mods or game updates
@@ -171,6 +173,28 @@ Controls TMR/Forage recipes for mixing wagons.
 - Ratios are automatically normalized based on your min/max ranges
 - When you disable an ingredient, it's completely removed from the TMR mixer UI
 - You cannot disable entire recipes, only individual ingredients
+
+### Consumption Multiplier Section
+
+Control how fast animals consume their food supply. This feature is **disabled by default** (opt-in).
+
+```xml
+<consumptionMultiplier>
+    <global multiplier="1.0" disabled="true"/>
+</consumptionMultiplier>
+```
+
+**What You Can Change:**
+- `multiplier`: Food consumption speed (0.01-100)
+  - `0.5` = Animals eat half as fast (food lasts longer)
+  - `1.0` = Normal speed (default)
+  - `2.0` = Animals eat twice as fast (food depletes faster)
+- `disabled`: Set to `"false"` to enable this feature
+
+**Notes:**
+- This feature only affects consumption **rate**, not food effectiveness (use `productionWeight` for that)
+- Automatically disabled if incompatible mods are detected (e.g., FS25_RealisticLivestock)
+- Server-authoritative in multiplayer: multiplier is applied on server, clients see the results
 
 ## Practical Examples
 
@@ -341,6 +365,30 @@ Want to add a custom food group? Remember the 5-entry limit! COW has 4 vanilla f
 
 Same principle applies to mixtures and recipes - keep active entries ≤ 5.
 
+### Speed Up Food Consumption (Testing/Fast-Forward)
+
+Enable the consumption multiplier to make animals eat faster:
+
+```xml
+<consumptionMultiplier>
+    <global multiplier="2.0" disabled="false"/>
+</consumptionMultiplier>
+```
+
+Animals now consume food twice as fast. Useful for testing animal systems or speeding up gameplay.
+
+### Slow Down Food Consumption (Realism/Easy Mode)
+
+Reduce consumption rate to make food last longer:
+
+```xml
+<consumptionMultiplier>
+    <global multiplier="0.5" disabled="false"/>
+</consumptionMultiplier>
+```
+
+Animals eat half as fast. Food supplies last twice as long.
+
 ## How It Works
 
 The mod integrates with Farming Simulator's animal food system through several mechanisms:
@@ -384,4 +432,11 @@ The merging system should handle most conflicts automatically. If you have issue
 - The last-loaded mod's XML values will take precedence
 - Check if other mods modify the same animal food values
 - Try loading this mod last (rename to start with "zzz" if needed)
+
+### Consumption Multiplier Not Working
+
+- Make sure `disabled="false"` is set (the feature is disabled by default)
+- Check the game log for "Incompatible mod detected" warning - the multiplier is automatically disabled when conflicting mods like FS25_RealisticLivestock are active
+- Verify the multiplier value is between 0.01 and 100
+- In multiplayer, the multiplier only applies on the server - clients see the results but don't apply the hook themselves
 
