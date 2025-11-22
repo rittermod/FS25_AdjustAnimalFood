@@ -10,7 +10,7 @@ Supports multiplayer.
 
 **Beta Software:** Please back up your savegames before use. The mod is fully functional but still in beta testing.
 
-As of version 0.11.0.0
+As of version 0.12.0.0
 You can:
 - Add custom food groups to animals and custom ingredients to mixtures/recipes
 - Disable unwanted food groups or ingredients
