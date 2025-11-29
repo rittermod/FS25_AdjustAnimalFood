@@ -1,51 +1,46 @@
 # FS25_AdjustAnimalFood
 
-Adjust Animal Food allows you to customize the animal feeding system in Farming Simulator 2025 through an XML configuration file. Why shouldn't chickens eat oats if you want them to? Or make grass more effective for cows? This mod gives you control over food effectiveness, crop assignments, mixed feed recipes, TMR compositions, and serial or parallel consumption.
+Why shouldn't chickens eat oats if you want them to? Or make grass more effective for cows? This mod gives you control over food effectiveness, crop assignments, mixed feed recipes, TMR compositions, serial/parallel consumption, and food consumption speed.
 
-You can also change how fast animals consume food with a configurable multiplier (0.01x to 100x), and if they eat all food groups in parallel or not.
+Adjust Animal Food allows you to customize the animal feeding system in Farming Simulator 2025 through an XML configuration file. Control food group effectiveness (productionWeight), consumption preferences (eatWeight), feeding mode (consumptionType), and consumption speed with a configurable multiplier (0.01x to 100x) - all without modifying map files.
 
 Supports multiplayer.
 
 ## Notes
 
-**This mod requires XML editing.** There is no in-game UI. Configuration is done by editing an XML file that's automatically generated in your savegame folder. If you're not comfortable editing XML files, this mod may not be for you.
+**XML Editing Required:** There is no in-game UI. Configuration is done by editing an XML file that's automatically generated in your savegame folder. If you're not comfortable editing XML files, this mod may not be for you.
 
-**Beta Software:** Please back up your savegames before use. The mod is fully functional but still in beta testing.
-
-As of version 0.12.0.0
 You can:
 - Add custom food groups to animals and custom ingredients to mixtures/recipes
-- Disable unwanted food groups or ingredients
+- Disable unwanted food groups or ingredients (except Grass)
 - Adjust food effectiveness and feeding behavior (productionWeight, eatWeight, consumptionType)
 - Change which crops belong to each food group (fillTypes)
 - Modify mixed feed recipes and ingredient proportions
 - Customize TMR/forage recipe compositions and ranges
-- Control whether animals eat all food groups in parallel or not
-- Control animal food consumption speed with a multiplier
+- Control serial/parallel consumption and consumption speed (0.01x to 100x)
 
-You **cannot**:
-- Cannot delete or add new animal types (only modify existing animals like COW, PIG, CHICKEN, SHEEP, HORSE)
-- Cannot delete or add new mixtures/recipes (only modify existing ones like PIGFOOD, FORAGE)
-- Cannot change internal names or titles (these are used for matching only)
-
+You cannot:
+- Add or delete animal types (only modify existing: COW, PIG, CHICKEN, SHEEP, HORSE)
+- Add or delete mixtures/recipes (only modify existing: PIGFOOD, FORAGE)
+- Disable the Grass food group (causes game hang - you can change its weights)
 
 Documentation, source code and issue tracker at https://github.com/rittermod/FS25_AdjustAnimalFood
 
 ## Features
 
-- **Animal Food Control**: Modify food group effectiveness (productionWeight) and consumption preferences (eatWeight) and mode (consumptionType) for all animal types
 - **Add Custom Content**: Add custom food groups to animals, extra ingredients to mixtures, and additional ingredients to TMR recipes
-- **Disable Food Groups & Ingredients**: Remove unwanted food groups, mixture ingredients, or recipe ingredients from the game
-- **Custom Crop Assignments**: Add or remove crops from any food group (e.g., add oat to chicken feed, allow cows to eat alfalfa silage)
+- **Disable Food Groups & Ingredients**: Remove unwanted food groups, mixture ingredients, or recipe ingredients from the game (except Grass)
+- **Adjust Food Effectiveness**: Modify productionWeight, eatWeight, and consumptionType for all animal types
+- **Custom Crop Assignments**: Add or remove crops from any food group (e.g., add oat to chicken feed)
 - **Mixed Feed Customization**: Adjust ingredient proportions and crop types for mixed feeds like pig food
-- **Recipe Control**: Customize recipes with precise min/max percentage ranges for each ingredient
+- **Recipe Control**: Customize TMR/forage recipes with precise min/max percentage ranges
 - **Serial & Parallel Consumption**: Choose whether animals eat food groups one at a time (SERIAL) or all at once (PARALLEL)
 - **Consumption Speed Control**: Adjust how fast animals consume food with a configurable multiplier (0.01x to 100x)
+- **Per-Savegame Configuration**: Each savegame gets its own XML file for independent customization
+- **Automatic Updates**: Configuration file is automatically updated with any new content on each load
 - **Automatic Normalization**: Remaining ingredients automatically adjust when you disable or modify items
 - **Schema-Validated Configuration**: Uses the game's built-in AnimalFoodSystem schema for robust, error-checked XML handling
 - **Intelligent Merging**: Your XML overrides customizations while automatically adding new content from mods or game updates
-- **Per-Savegame Configuration**: Each savegame gets its own XML file for independent customization
-- **Automatic Updates**: Configuration file is automatically updated with any new content on each load
 
 
 ## Installation

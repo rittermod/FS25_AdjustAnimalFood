@@ -4,6 +4,7 @@ CLAUDE.md
 claudedocs/
 PROJECT_INDEX.*
 .vscode/
+.modinternal/
 build/
 dist/
 _temp_files/
