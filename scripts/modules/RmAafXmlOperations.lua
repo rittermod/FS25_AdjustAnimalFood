@@ -17,6 +17,8 @@
     Author: Ritter
 ]]
 
+local Log = RmLogging.getLogger("AdjustAnimalFood")
+
 RmAafXmlOperations = {}
 
 -- ============================================================================
@@ -27,7 +29,7 @@ RmAafXmlOperations = {}
 ---@param filePath string Path to XML file
 ---@return table|nil data Loaded configuration or nil on error
 function RmAafXmlOperations:loadFromXML(filePath)
-    RmLogging.logInfo("Loading animal food configuration from %s", filePath)
+    Log:info("Loading animal food configuration from %s", filePath)
 
     -- Create extended schema with our custom 'disabled' attribute
     local schema = AnimalFoodSystem.xmlSchema
@@ -58,7 +60,7 @@ function RmAafXmlOperations:loadFromXML(filePath)
 
     local xmlFile = XMLFile.load("animalFoodAdjust", filePath, schema)
     if not xmlFile then
-        RmLogging.logError("Failed to load XML file with schema")
+        Log:error("Failed to load XML file with schema")
         return nil
     end
 
@@ -101,7 +103,7 @@ function RmAafXmlOperations:loadFromXML(filePath)
             end)
 
             table.insert(data.animals, animal)
-            RmLogging.logDebug("Loaded animal %s with %d food groups", animalTypeName, #animal.foodGroups)
+            Log:debug("Loaded animal %s with %d food groups", animalTypeName, #animal.foodGroups)
         end
     end)
 
@@ -130,7 +132,7 @@ function RmAafXmlOperations:loadFromXML(filePath)
 
         if mixture.fillType and mixture.animalType then
             table.insert(data.mixtures, mixture)
-            RmLogging.logDebug("Loaded mixture %s for %s", mixture.fillType, mixture.animalType)
+            Log:debug("Loaded mixture %s for %s", mixture.fillType, mixture.animalType)
         end
     end)
 
@@ -161,7 +163,7 @@ function RmAafXmlOperations:loadFromXML(filePath)
 
         if recipe.fillType then
             table.insert(data.recipes, recipe)
-            RmLogging.logDebug("Loaded recipe %s with %d ingredients", recipe.fillType, #recipe.ingredients)
+            Log:debug("Loaded recipe %s with %d ingredients", recipe.fillType, #recipe.ingredients)
         end
     end)
 
@@ -172,7 +174,7 @@ function RmAafXmlOperations:loadFromXML(filePath)
     -- Check if multiplier attribute exists but failed to parse (e.g., "abc" returns nil for FLOAT)
     local hasMultiplierAttr = xmlFile:hasProperty("animalFood.consumptionMultiplier.global#multiplier")
     if hasMultiplierAttr and cmMultiplier == nil then
-        RmLogging.logWarning("Consumption multiplier has invalid value (not a number), using default 1.0")
+        Log:warning("Consumption multiplier has invalid value (not a number), using default 1.0")
     end
 
     -- Only set if section exists in XML (allows defaults for old saves)
@@ -185,10 +187,10 @@ function RmAafXmlOperations:loadFromXML(filePath)
         -- Validate and apply multiplier with bounds checking
         if cmMultiplier ~= nil then
             if cmMultiplier < 0.01 then
-                RmLogging.logWarning("Consumption multiplier %.4f below minimum (0.01), clamping", cmMultiplier)
+                Log:warning("Consumption multiplier %.4f below minimum (0.01), clamping", cmMultiplier)
                 data.consumptionMultiplier.multiplier = 0.01
             elseif cmMultiplier > 100 then
-                RmLogging.logWarning("Consumption multiplier %.2f above maximum (100), clamping", cmMultiplier)
+                Log:warning("Consumption multiplier %.2f above maximum (100), clamping", cmMultiplier)
                 data.consumptionMultiplier.multiplier = 100
             else
                 data.consumptionMultiplier.multiplier = cmMultiplier
@@ -200,14 +202,14 @@ function RmAafXmlOperations:loadFromXML(filePath)
             data.consumptionMultiplier.disabled = cmDisabled
         end
 
-        RmLogging.logDebug("Loaded consumption multiplier: %.2fx, disabled=%s",
+        Log:debug("Loaded consumption multiplier: %.2fx, disabled=%s",
             data.consumptionMultiplier.multiplier,
             tostring(data.consumptionMultiplier.disabled))
     end
 
     xmlFile:delete()
 
-    RmLogging.logInfo("Loaded %d animals, %d mixtures, %d recipes from XML",
+    Log:info("Loaded %d animals, %d mixtures, %d recipes from XML",
         #data.animals, #data.mixtures, #data.recipes)
 
     return data
@@ -222,11 +224,11 @@ end
 ---@param filePath string Path to XML file
 ---@return boolean success True if save was successful
 function RmAafXmlOperations:saveToXML(data, filePath)
-    RmLogging.logInfo("Saving animal food configuration to %s", filePath)
+    Log:info("Saving animal food configuration to %s", filePath)
 
     local xmlFile = createXMLFile("animalFoodAdjust", filePath, "animalFood")
     if xmlFile == nil then
-        RmLogging.logError("Failed to create XML file")
+        Log:error("Failed to create XML file")
         return false
     end
 
@@ -254,7 +256,7 @@ function RmAafXmlOperations:saveToXML(data, filePath)
             end
         end
 
-        RmLogging.logDebug("Saved animal %s with %d food groups", animal.animalType, #animal.foodGroups)
+        Log:debug("Saved animal %s with %d food groups", animal.animalType, #animal.foodGroups)
     end
 
     -- Save mixtures
@@ -274,7 +276,7 @@ function RmAafXmlOperations:saveToXML(data, filePath)
             end
         end
 
-        RmLogging.logDebug("Saved mixture %s for %s", mixture.fillType, mixture.animalType)
+        Log:debug("Saved mixture %s for %s", mixture.fillType, mixture.animalType)
     end
 
     -- Save recipes
@@ -296,7 +298,7 @@ function RmAafXmlOperations:saveToXML(data, filePath)
             end
         end
 
-        RmLogging.logDebug("Saved recipe %s with %d ingredients", recipe.fillType, #recipe.ingredients)
+        Log:debug("Saved recipe %s with %d ingredients", recipe.fillType, #recipe.ingredients)
     end
 
     -- Save consumption multiplier settings
@@ -304,13 +306,13 @@ function RmAafXmlOperations:saveToXML(data, filePath)
         local cm = data.consumptionMultiplier
         setXMLFloat(xmlFile, "animalFood.consumptionMultiplier.global#multiplier", cm.multiplier or 1.0)
         setXMLBool(xmlFile, "animalFood.consumptionMultiplier.global#disabled", cm.disabled ~= false)
-        RmLogging.logDebug("Saved consumption multiplier: %.2fx, disabled=%s",
+        Log:debug("Saved consumption multiplier: %.2fx, disabled=%s",
             cm.multiplier or 1.0, tostring(cm.disabled ~= false))
     else
         -- Write defaults for new saves
         setXMLFloat(xmlFile, "animalFood.consumptionMultiplier.global#multiplier", 1.0)
         setXMLBool(xmlFile, "animalFood.consumptionMultiplier.global#disabled", true)
-        RmLogging.logDebug("Saved consumption multiplier defaults: 1.0x, disabled=true")
+        Log:debug("Saved consumption multiplier defaults: 1.0x, disabled=true")
     end
 
     -- Write comprehensive documentation at end of file
@@ -612,7 +614,7 @@ Generated by FS25_AdjustAnimalFood mod
     saveXMLFile(xmlFile)
     delete(xmlFile)
 
-    RmLogging.logInfo("Successfully saved %d animals, %d mixtures, %d recipes to XML",
+    Log:info("Successfully saved %d animals, %d mixtures, %d recipes to XML",
         #data.animals, #data.mixtures, #data.recipes)
 
     return true

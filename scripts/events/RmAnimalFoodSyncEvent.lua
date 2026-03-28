@@ -7,6 +7,8 @@
     Author: Ritter
 ]]
 
+local Log = RmLogging.getLogger("AdjustAnimalFood")
+
 RmAnimalFoodSyncEvent = {}
 local RmAnimalFoodSyncEvent_mt = Class(RmAnimalFoodSyncEvent, Event)
 
@@ -165,7 +167,7 @@ end
 ---Executes event on client - applies received configuration to game
 ---@param connection table Connection object
 function RmAnimalFoodSyncEvent:run(connection)
-    RmLogging.logInfo("Received config sync from server: %d animals, %d mixtures, %d recipes",
+    Log:info("Received config sync from server: %d animals, %d mixtures, %d recipes",
         #self.animals, #self.mixtures, #self.recipes)
 
     -- Apply received configuration to game
@@ -176,5 +178,5 @@ function RmAnimalFoodSyncEvent:run(connection)
     }
 
     RmAafGameApplicator:applyToGame(configData)
-    RmLogging.logInfo("Client configuration applied successfully")
+    Log:info("Client configuration applied successfully")
 end

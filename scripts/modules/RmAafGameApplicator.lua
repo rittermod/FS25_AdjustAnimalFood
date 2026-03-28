@@ -11,6 +11,8 @@
     Author: Ritter
 ]]
 
+local Log = RmLogging.getLogger("AdjustAnimalFood")
+
 RmAafGameApplicator = {}
 
 -- ============================================================================
@@ -35,7 +37,7 @@ local function applyAnimalsToGame(animals, foodSystem)
                 if animalData.consumptionType then
                     local consumptionTypeValue = RmAafDataConverters.getConsumptionTypeValue(animalData.consumptionType)
                     animalFood.consumptionType = consumptionTypeValue
-                    RmLogging.logInfo("Applied consumptionType for %s: %s (%d)",
+                    Log:info("Applied consumptionType for %s: %s (%d)",
                         animalData.animalType, animalData.consumptionType, consumptionTypeValue)
                 end
 
@@ -63,12 +65,12 @@ local function applyAnimalsToGame(animals, foodSystem)
 
                                 if newFillTypes then
                                     gameGroup.fillTypes = newFillTypes
-                                    RmLogging.logDebug("Applied fillTypes for %s: %s", context, configGroup.fillTypes)
+                                    Log:debug("Applied fillTypes for %s: %s", context, configGroup.fillTypes)
                                 end
                             end
 
                             applied = applied + 1
-                            RmLogging.logDebug("Applied %s / %s: prodWeight=%.3f, eatWeight=%.3f",
+                            Log:debug("Applied %s / %s: prodWeight=%.3f, eatWeight=%.3f",
                                 animalData.animalType, configGroup.title,
                                 configGroup.productionWeight, configGroup.eatWeight)
                         end
@@ -84,9 +86,9 @@ local function applyAnimalsToGame(animals, foodSystem)
                     end
                 end
 
-                RmLogging.logDebug("DEBUG: Animal %s - Game array before insertions:", animalData.animalType)
+                Log:debug("DEBUG: Animal %s - Game array before insertions:", animalData.animalType)
                 for idx, grp in ipairs(animalFood.groups) do
-                    RmLogging.logDebug("  [%d] %s (disabled=%s)", idx, grp.title,
+                    Log:debug("  [%d] %s (disabled=%s)", idx, grp.title,
                         tostring(disabledTitles[grp.title] or false))
                 end
 
@@ -120,7 +122,7 @@ local function applyAnimalsToGame(animals, foodSystem)
                                     end
                                 end
 
-                                RmLogging.logDebug("DEBUG: Inserting %s at XML position %d, activeItemsBefore=%d",
+                                Log:debug("DEBUG: Inserting %s at XML position %d, activeItemsBefore=%d",
                                     configGroup.title, i, activeItemsBefore)
 
                                 -- Find insertion position: after the Nth non-disabled item in game array
@@ -128,14 +130,14 @@ local function applyAnimalsToGame(animals, foodSystem)
                                 if activeItemsBefore > 0 then
                                     local activeCount = 0
                                     for pos, grp in ipairs(animalFood.groups) do
-                                        RmLogging.logDebug(
+                                        Log:debug(
                                             "DEBUG:   Checking pos=%d, title=%s, disabled=%s, activeCount=%d",
                                             pos, grp.title, tostring(disabledTitles[grp.title] or false), activeCount)
                                         if not disabledTitles[grp.title] then
                                             activeCount = activeCount + 1
                                             if activeCount == activeItemsBefore then
                                                 insertPosition = pos + 1
-                                                RmLogging.logDebug("DEBUG:   Found match! insertPosition=%d",
+                                                Log:debug("DEBUG:   Found match! insertPosition=%d",
                                                     insertPosition)
                                                 break
                                             end
@@ -144,23 +146,23 @@ local function applyAnimalsToGame(animals, foodSystem)
                                     -- If we didn't find enough active items, append at end
                                     if activeCount < activeItemsBefore then
                                         insertPosition = #animalFood.groups + 1
-                                        RmLogging.logDebug("DEBUG:   Not enough active items, appending at end: %d",
+                                        Log:debug("DEBUG:   Not enough active items, appending at end: %d",
                                             insertPosition)
                                     end
                                 end
 
                                 table.insert(animalFood.groups, insertPosition, newGroup)
 
-                                RmLogging.logDebug("DEBUG: After insertion, game array:")
+                                Log:debug("DEBUG: After insertion, game array:")
                                 for idx, grp in ipairs(animalFood.groups) do
-                                    RmLogging.logDebug("  [%d] %s", idx, grp.title)
+                                    Log:debug("  [%d] %s", idx, grp.title)
                                 end
 
                                 applied = applied + 1
-                                RmLogging.logInfo("Added custom food group: %s / %s at position %d",
+                                Log:info("Added custom food group: %s / %s at position %d",
                                     animalData.animalType, configGroup.title, insertPosition)
                             else
-                                RmLogging.logWarning("Cannot add custom food group %s / %s: all fillTypes invalid",
+                                Log:warning("Cannot add custom food group %s / %s: all fillTypes invalid",
                                     animalData.animalType, configGroup.title)
                             end
                         end
@@ -174,7 +176,7 @@ local function applyAnimalsToGame(animals, foodSystem)
                         for i = #animalFood.groups, 1, -1 do
                             if animalFood.groups[i].title == configGroup.title then
                                 table.remove(animalFood.groups, i)
-                                RmLogging.logInfo("Removed disabled food group: %s / %s",
+                                Log:info("Removed disabled food group: %s / %s",
                                     animalData.animalType, configGroup.title)
                                 break
                             end
@@ -222,7 +224,7 @@ local function applyMixturesToGame(mixtures, foodSystem)
                                 end
                             end
 
-                            RmLogging.logDebug("Applied ingredient %d for mixture %s: weight=%.3f",
+                            Log:debug("Applied ingredient %d for mixture %s: weight=%.3f",
                                 i, mixtureData.fillType, configIngredient.weight)
                         end
                     end
@@ -259,10 +261,10 @@ local function applyMixturesToGame(mixtures, foodSystem)
                                 local insertPosition = activeItemsBefore + 1
                                 table.insert(gameMixture.ingredients, insertPosition, newIngredient)
 
-                                RmLogging.logInfo("Added custom ingredient %d to mixture %s at position %d",
+                                Log:info("Added custom ingredient %d to mixture %s at position %d",
                                     i, mixtureData.fillType, insertPosition)
                             else
-                                RmLogging.logWarning(
+                                Log:warning(
                                     "Cannot add custom ingredient %d to mixture %s: all fillTypes invalid",
                                     i, mixtureData.fillType)
                             end
@@ -276,7 +278,7 @@ local function applyMixturesToGame(mixtures, foodSystem)
                 for i = #mixtureData.ingredients, 1, -1 do
                     if mixtureData.ingredients[i].disabled and gameMixture.ingredients[i] then
                         table.remove(gameMixture.ingredients, i)
-                        RmLogging.logInfo("Removed disabled ingredient %d from mixture %s",
+                        Log:info("Removed disabled ingredient %d from mixture %s",
                             i, mixtureData.fillType)
                     end
                 end
@@ -284,7 +286,7 @@ local function applyMixturesToGame(mixtures, foodSystem)
                 -- Normalize weights for this mixture
                 RmAafDataConverters.normalizeWeights(gameMixture.ingredients)
 
-                RmLogging.logDebug("Applied mixture %s with %d ingredients",
+                Log:debug("Applied mixture %s with %d ingredients",
                     mixtureData.fillType, #mixtureData.ingredients)
             end
         end
@@ -331,7 +333,7 @@ local function applyRecipesToGame(recipes, foodSystem)
                                 end
                             end
 
-                            RmLogging.logDebug("Applied ingredient %d (%s) for recipe %s",
+                            Log:debug("Applied ingredient %d (%s) for recipe %s",
                                 i, configIngredient.name, recipeData.fillType)
                         end
                     end
@@ -374,10 +376,10 @@ local function applyRecipesToGame(recipes, foodSystem)
                                 local insertPosition = activeItemsBefore + 1
                                 table.insert(gameRecipe.ingredients, insertPosition, newIngredient)
 
-                                RmLogging.logInfo("Added custom ingredient %d (%s) to recipe %s at position %d",
+                                Log:info("Added custom ingredient %d (%s) to recipe %s at position %d",
                                     i, configIngredient.name, recipeData.fillType, insertPosition)
                             else
-                                RmLogging.logWarning(
+                                Log:warning(
                                     "Cannot add custom ingredient %d (%s) to recipe %s: all fillTypes invalid",
                                     i, configIngredient.name, recipeData.fillType)
                             end
@@ -391,7 +393,7 @@ local function applyRecipesToGame(recipes, foodSystem)
                 for i = #recipeData.ingredients, 1, -1 do
                     if recipeData.ingredients[i].disabled and gameRecipe.ingredients[i] then
                         table.remove(gameRecipe.ingredients, i)
-                        RmLogging.logInfo("Removed disabled ingredient %d from recipe %s",
+                        Log:info("Removed disabled ingredient %d from recipe %s",
                             i, recipeData.fillType)
                     end
                 end
@@ -399,7 +401,7 @@ local function applyRecipesToGame(recipes, foodSystem)
                 -- Normalize ratios for this recipe
                 RmAafDataConverters.normalizeRatios(gameRecipe.ingredients)
 
-                RmLogging.logDebug("Applied recipe %s with %d ingredients",
+                Log:debug("Applied recipe %s with %d ingredients",
                     recipeData.fillType, #recipeData.ingredients)
             end
         end
@@ -417,10 +419,10 @@ end
 ---@param data table Configuration to apply (with animals, mixtures, recipes tables)
 ---@return boolean success True if any configuration was successfully applied
 function RmAafGameApplicator:applyToGame(data)
-    RmLogging.logInfo("Applying configuration to game")
+    Log:info("Applying configuration to game")
 
     if not g_currentMission or not g_currentMission.animalFoodSystem then
-        RmLogging.logError("AnimalFoodSystem not available")
+        Log:error("AnimalFoodSystem not available")
         return false
     end
 
@@ -431,7 +433,7 @@ function RmAafGameApplicator:applyToGame(data)
     local mixturesApplied = applyMixturesToGame(data.mixtures, foodSystem)
     local recipesApplied = applyRecipesToGame(data.recipes, foodSystem)
 
-    RmLogging.logInfo("Applied %d food groups, %d mixture ingredients, %d recipe ingredients",
+    Log:info("Applied %d food groups, %d mixture ingredients, %d recipe ingredients",
         animalsApplied, mixturesApplied, recipesApplied)
 
     return animalsApplied > 0 or mixturesApplied > 0 or recipesApplied > 0

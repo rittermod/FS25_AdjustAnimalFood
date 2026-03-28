@@ -10,7 +10,7 @@
 local modDirectory = g_currentModDirectory
 
 -- Load logging utility first (required by all other files)
-source(modDirectory .. "scripts/RmLogging.lua")
+source(modDirectory .. "scripts/rmlib/RmLogging.lua")
 
 -- Load event classes (required before main mod logic)
 source(modDirectory .. "scripts/events/RmAnimalFoodSyncEvent.lua")

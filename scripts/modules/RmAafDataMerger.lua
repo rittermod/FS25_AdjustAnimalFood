@@ -11,6 +11,8 @@
     Author: Ritter
 ]]
 
+local Log = RmLogging.getLogger("AdjustAnimalFood")
+
 RmAafDataMerger = {}
 
 -- ============================================================================
@@ -75,9 +77,9 @@ local function mergeAnimals(xmlAnimals, gameAnimals, preserveAllXmlOnly)
                             disabled = xmlGroup.disabled
                         })
                         if xmlGroup.disabled then
-                            RmLogging.logDebug("Preserving disabled food group: %s / %s", gameAnimal.animalType, xmlGroup.title)
+                            Log:debug("Preserving disabled food group: %s / %s", gameAnimal.animalType, xmlGroup.title)
                         else
-                            RmLogging.logDebug("Preserving custom food group: %s / %s", gameAnimal.animalType, xmlGroup.title)
+                            Log:debug("Preserving custom food group: %s / %s", gameAnimal.animalType, xmlGroup.title)
                         end
                     end
                 end
@@ -96,7 +98,7 @@ local function mergeAnimals(xmlAnimals, gameAnimals, preserveAllXmlOnly)
                 if not foundInXml then
                     -- New group from game - add with game defaults at end
                     table.insert(mergedAnimal.foodGroups, gameGroup)
-                    RmLogging.logDebug("New food group added: %s / %s", gameAnimal.animalType, gameGroup.title)
+                    Log:debug("New food group added: %s / %s", gameAnimal.animalType, gameGroup.title)
                 end
             end
 
@@ -104,7 +106,7 @@ local function mergeAnimals(xmlAnimals, gameAnimals, preserveAllXmlOnly)
         else
             -- New animal from game - add with game defaults
             table.insert(merged, gameAnimal)
-            RmLogging.logInfo("New animal type added: %s", gameAnimal.animalType)
+            Log:info("New animal type added: %s", gameAnimal.animalType)
         end
     end
 
@@ -140,7 +142,7 @@ local function mergeMixtures(xmlMixtures, gameMixtures, preserveAllXmlOnly)
             -- XML-only mixture (custom addition)
             if preserveAllXmlOnly then
                 table.insert(merged, xmlMixture)
-                RmLogging.logDebug("Preserving XML-only mixture: %s for %s",
+                Log:debug("Preserving XML-only mixture: %s for %s",
                     xmlMixture.fillType, xmlMixture.animalType)
             end
         end
@@ -160,7 +162,7 @@ local function mergeMixtures(xmlMixtures, gameMixtures, preserveAllXmlOnly)
 
         if not foundInXml then
             table.insert(merged, gameMixture)
-            RmLogging.logDebug("New mixture added: %s for %s", gameMixture.fillType, gameMixture.animalType)
+            Log:debug("New mixture added: %s for %s", gameMixture.fillType, gameMixture.animalType)
         end
     end
 
@@ -194,7 +196,7 @@ local function mergeRecipes(xmlRecipes, gameRecipes, preserveAllXmlOnly)
             -- XML-only recipe (custom addition)
             if preserveAllXmlOnly then
                 table.insert(merged, xmlRecipe)
-                RmLogging.logDebug("Preserving XML-only recipe: %s", xmlRecipe.fillType)
+                Log:debug("Preserving XML-only recipe: %s", xmlRecipe.fillType)
             end
         end
     end
@@ -211,7 +213,7 @@ local function mergeRecipes(xmlRecipes, gameRecipes, preserveAllXmlOnly)
 
         if not foundInXml then
             table.insert(merged, gameRecipe)
-            RmLogging.logDebug("New recipe added: %s", gameRecipe.fillType)
+            Log:debug("New recipe added: %s", gameRecipe.fillType)
         end
     end
 
@@ -229,7 +231,7 @@ end
 ---@param preserveAllXmlOnly boolean If true, preserve all XML-only items (startup). If false, only preserve disabled items (save). Default: false
 ---@return table merged Merged configuration (with animals, mixtures, recipes tables)
 function RmAafDataMerger:mergeData(xmlData, gameData, preserveAllXmlOnly)
-    RmLogging.logInfo("Merging XML data with game data")
+    Log:info("Merging XML data with game data")
 
     local merged = {
         animals = {},
@@ -261,7 +263,7 @@ function RmAafDataMerger:mergeData(xmlData, gameData, preserveAllXmlOnly)
         }
     end
 
-    RmLogging.logInfo("Merged to %d animals, %d mixtures, %d recipes",
+    Log:info("Merged to %d animals, %d mixtures, %d recipes",
         #merged.animals, #merged.mixtures, #merged.recipes)
 
     return merged

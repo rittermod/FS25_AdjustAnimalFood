@@ -11,6 +11,8 @@
     Author: Ritter
 ]]
 
+local Log = RmLogging.getLogger("AdjustAnimalFood")
+
 RmAafDataConverters = {}
 
 -- ============================================================================
@@ -79,7 +81,7 @@ function RmAafDataConverters.parseFillTypesFromString(fillTypeString, context)
         if fillTypeIndex then
             table.insert(fillTypeIndices, fillTypeIndex)
         else
-            RmLogging.logWarning("Unknown fillType '%s' for %s", fillTypeName, context)
+            Log:warning("Unknown fillType '%s' for %s", fillTypeName, context)
         end
     end
 

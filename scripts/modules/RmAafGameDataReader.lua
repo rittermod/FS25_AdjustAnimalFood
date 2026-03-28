@@ -10,6 +10,8 @@
     Author: Ritter
 ]]
 
+local Log = RmLogging.getLogger("AdjustAnimalFood")
+
 RmAafGameDataReader = {}
 
 -- ============================================================================
@@ -43,7 +45,7 @@ local function readAnimalsFromGame(foodSystem)
             end
 
             table.insert(animals, animal)
-            RmLogging.logDebug("Read animal %s with %d food groups", animalName, #animal.foodGroups)
+            Log:debug("Read animal %s with %d food groups", animalName, #animal.foodGroups)
         end
     end
 
@@ -90,7 +92,7 @@ local function readMixturesFromGame(foodSystem)
             end
 
             table.insert(mixtures, mixtureData)
-            RmLogging.logDebug("Read mixture %s for %s", fillTypeName, animalName)
+            Log:debug("Read mixture %s for %s", fillTypeName, animalName)
         end
     end
 
@@ -125,7 +127,7 @@ local function readRecipesFromGame(foodSystem)
             end
 
             table.insert(recipes, recipeData)
-            RmLogging.logDebug("Read recipe %s with %d ingredients", fillTypeName, #recipeData.ingredients)
+            Log:debug("Read recipe %s with %d ingredients", fillTypeName, #recipeData.ingredients)
         end
     end
 
@@ -140,7 +142,7 @@ end
 ---Coordinates reading of animals, mixtures, and recipes
 ---@return table data Current game configuration (with animals, mixtures, recipes tables)
 function RmAafGameDataReader:readGameData()
-    RmLogging.logInfo("Reading current game animal food data")
+    Log:info("Reading current game animal food data")
 
     local data = {
         animals = {},
@@ -149,7 +151,7 @@ function RmAafGameDataReader:readGameData()
     }
 
     if not g_currentMission or not g_currentMission.animalFoodSystem then
-        RmLogging.logError("AnimalFoodSystem not available")
+        Log:error("AnimalFoodSystem not available")
         return data
     end
 
@@ -160,7 +162,7 @@ function RmAafGameDataReader:readGameData()
     data.mixtures = readMixturesFromGame(foodSystem)
     data.recipes = readRecipesFromGame(foodSystem)
 
-    RmLogging.logInfo("Read %d animals, %d mixtures, %d recipes from game",
+    Log:info("Read %d animals, %d mixtures, %d recipes from game",
         #data.animals, #data.mixtures, #data.recipes)
 
     return data

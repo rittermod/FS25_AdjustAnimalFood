@@ -63,50 +63,8 @@ local MULTIPLIER_MIN = 0.01
 local MULTIPLIER_MAX = 100
 
 -- Configure logging
-RmLogging.setLogPrefix("[RmAdjustAnimalFood]")
--- RmLogging.setLogLevel(RmLogging.LOG_LEVEL.DEBUG) -- Change to INFO or WARNING for less verbosity
-
--- ============================================================================
--- INITIALIZATION: Context detection and setup
--- ============================================================================
-
----Detects server/client context and updates logging prefix accordingly
----Called during initialization to distinguish between dedicated server, listen server, and client
----in log output. This helps with multiplayer debugging.
-local function setLoggingContext()
-    local prefix = "[RmAdjustAnimalFood"
-    local contextName = ""
-
-    if g_dedicatedServer ~= nil then
-        prefix = prefix .. "|SERVER-DEDICATED]"
-        contextName = "Dedicated Server"
-    elseif g_server ~= nil and g_client ~= nil then
-        prefix = prefix .. "|SERVER-LISTEN]"
-        contextName = "Listen Server (Host)"
-    elseif g_client ~= nil and g_server == nil then
-        prefix = prefix .. "|CLIENT]"
-        contextName = "Pure Client"
-    else
-        prefix = prefix .. "|UNKNOWN]"
-        contextName = "Unknown (no g_server or g_client)"
-    end
-
-    RmLogging.setLogPrefix(prefix)
-    RmLogging.logInfo("Context detected: %s", contextName)
-
-    -- Debug: Log all detection variables for analysis
-    RmLogging.logDebug(
-        "g_server=%s g_client=%s g_dedicatedServer=%s g_dedicatedServerInfo=%s getUserProfileAppPath=%s getIsClient=%s getIsServer=%s isMasterUser=%s",
-        tostring(g_server),
-        tostring(g_client),
-        tostring(g_dedicatedServer),
-        tostring(g_dedicatedServerInfo),
-        tostring(getUserProfileAppPath()),
-        tostring(g_currentMission:getIsClient()),
-        tostring(g_currentMission:getIsServer()),
-        tostring(g_currentMission.isMasterUser)
-    )
-end
+local Log = RmLogging.getLogger("AdjustAnimalFood")
+-- Log:setLevel("DEBUG") -- Change to INFO or WARNING for less verbosity
 
 -- ============================================================================
 -- CONSUMPTION MULTIPLIER: Hook implementation
@@ -156,26 +114,26 @@ end
 local function applyConsumptionMultiplierHook()
     -- Only apply on server (consumption calculation is server-side)
     if g_server == nil then
-        RmLogging.logDebug("Consumption multiplier: Skipping hook (client context)")
+        Log:debug("Consumption multiplier: Skipping hook (client context)")
         return
     end
 
     -- Check if already applied
     if RmAdjustAnimalFood.consumptionMultiplierHookApplied then
-        RmLogging.logDebug("Consumption multiplier: Hook already applied")
+        Log:debug("Consumption multiplier: Hook already applied")
         return
     end
 
     -- Check if feature is enabled
     if not RmAdjustAnimalFood.consumptionMultiplierEnabled then
-        RmLogging.logDebug("Consumption multiplier: Feature disabled in config")
+        Log:debug("Consumption multiplier: Feature disabled in config")
         return
     end
 
     -- Check for incompatible mods
     local compatible, incompatibleMod = checkModCompatibility()
     if not compatible then
-        RmLogging.logWarning(
+        Log:warning(
             "Consumption multiplier disabled: Incompatible mod detected (%s). " ..
             "This mod also modifies animal food consumption. " ..
             "Other features of AdjustAnimalFood remain active.",
@@ -186,7 +144,7 @@ local function applyConsumptionMultiplierHook()
 
     -- Check if multiplier is effectively 1.0 (no change needed)
     if math.abs(RmAdjustAnimalFood.consumptionMultiplier - 1.0) < 0.001 then
-        RmLogging.logDebug("Consumption multiplier: Value is 1.0, no hook needed")
+        Log:debug("Consumption multiplier: Value is 1.0, no hook needed")
         return
     end
 
@@ -197,9 +155,9 @@ local function applyConsumptionMultiplierHook()
             applyConsumptionMultiplier
         )
         RmAdjustAnimalFood.consumptionMultiplierHookApplied = true
-        RmLogging.logInfo("Consumption multiplier hook applied (%.2fx)", RmAdjustAnimalFood.consumptionMultiplier)
+        Log:info("Consumption multiplier hook applied (%.2fx)", RmAdjustAnimalFood.consumptionMultiplier)
     else
-        RmLogging.logError(
+        Log:error(
             "Failed to apply consumption multiplier: PlaceableHusbandryFood.onHusbandryAnimalsUpdate not found")
     end
 end
@@ -213,30 +171,27 @@ end
 ---This is the main entry point called after map loading completes
 ---Workflow: Load XML → Read game data → Merge → Save merged → Apply to game
 function RmAdjustAnimalFood.loadAndApply()
-    -- Detect and log server/client context for multiplayer support
-    setLoggingContext()
-
     -- Pure clients should wait for server sync, not load XML
     if g_client ~= nil and g_server == nil then
-        RmLogging.logInfo("Waiting for server configuration sync")
+        Log:info("Waiting for server configuration sync")
         return
     end
 
     if not g_currentMission or not g_currentMission.missionInfo then
-        RmLogging.logWarning("Mission information not available")
+        Log:warning("Mission information not available")
         return
     end
 
     local savegameDir = g_currentMission.missionInfo.savegameDirectory
     if not savegameDir then
-        RmLogging.logWarning("Savegame directory not available")
+        Log:warning("Savegame directory not available")
         return
     end
 
     local xmlFilePath = savegameDir .. "/" .. RmAdjustAnimalFood.XML_FILENAME
 
     if fileExists(xmlFilePath) then
-        RmLogging.logDebug("Configuration file exists, loading...")
+        Log:debug("Configuration file exists, loading...")
 
         local xmlData = RmAafXmlOperations:loadFromXML(xmlFilePath)
         if xmlData then
@@ -261,7 +216,7 @@ function RmAdjustAnimalFood.loadAndApply()
             end
         end
     else
-        RmLogging.logDebug("No configuration file found, creating default")
+        Log:debug("No configuration file found, creating default")
 
         local gameData = RmAafGameDataReader:readGameData()
 
@@ -288,24 +243,24 @@ function RmAdjustAnimalFood.loadAndApply()
             RmAdjustAnimalFood.configData.mixtures,
             RmAdjustAnimalFood.configData.recipes
         ))
-        RmLogging.logInfo("Config sync broadcasted to all clients")
+        Log:info("Config sync broadcasted to all clients")
     end
 
-    RmLogging.logInfo("RmAdjustAnimalFood initialization complete")
+    Log:info("RmAdjustAnimalFood initialization complete")
 end
 
 ---Saves current game configuration to XML
 function RmAdjustAnimalFood.saveToFile()
-    RmLogging.logInfo("Saving animal food configuration...")
+    Log:info("Saving animal food configuration...")
 
     if not g_currentMission or not g_currentMission.missionInfo then
-        RmLogging.logWarning("Mission information not available, skipping save")
+        Log:warning("Mission information not available, skipping save")
         return
     end
 
     local savegameDir = g_currentMission.missionInfo.savegameDirectory
     if not savegameDir then
-        RmLogging.logWarning("Savegame directory not available, skipping save")
+        Log:warning("Savegame directory not available, skipping save")
         return
     end
 
@@ -318,7 +273,7 @@ function RmAdjustAnimalFood.saveToFile()
         dataToSave = RmAafDataMerger:mergeData(RmAdjustAnimalFood.configData, gameData, false)
     else
         -- First save before configData was initialized (new game, savegame folder didn't exist during loadAndApply)
-        RmLogging.logInfo("No config data available, saving current game data")
+        Log:info("No config data available, saving current game data")
         dataToSave = gameData
         RmAdjustAnimalFood.configData = gameData
     end
@@ -329,7 +284,7 @@ end
 ---Called when map finishes loading
 ---This is the entry point for the mod
 local function onLoadMapFinished()
-    RmLogging.logInfo("Map loading finished, initializing RmAdjustAnimalFood")
+    Log:info("Map loading finished, initializing RmAdjustAnimalFood")
 
     -- Hook into savegame save
     FSBaseMission.saveSavegame = Utils.appendedFunction(
@@ -364,7 +319,7 @@ function RmAdjustAnimalFood:sendInitialClientState(connection, user, farm)
             RmAdjustAnimalFood.configData.mixtures,
             RmAdjustAnimalFood.configData.recipes
         ))
-        RmLogging.logInfo("Sent config sync to newly connected client")
+        Log:info("Sent config sync to newly connected client")
     end
 end
 
@@ -374,4 +329,4 @@ FSBaseMission.sendInitialClientState = Utils.appendedFunction(
     RmAdjustAnimalFood.sendInitialClientState
 )
 
-RmLogging.logInfo("RmAdjustAnimalFood mod initialized")
+Log:info("RmAdjustAnimalFood mod initialized")
